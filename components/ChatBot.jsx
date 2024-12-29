@@ -1,7 +1,18 @@
 "use client";
+
 import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { ArrowRight, Flag, Mic, RefreshCw, UploadIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "./ui/skeleton";
+import DocsChat from "./DocsChat";
+import ChatList from "./ChatList";
+import ChatBoxForDocs from "./ChatBotForImage";
+import ChatBot from "@/app/get-legal-doc/page";
 
 const ChatBox = () => {
   const chatEndRef = useRef(null);
@@ -18,6 +29,7 @@ const ChatBox = () => {
     setSelectedChat,
   } = useContext(MyContext);
   const [loading, setLoading] = useState(false);
+  const [currentTab, setCurrentTab] = useState("chat");
 
   const router = useRouter();
 
@@ -33,7 +45,10 @@ const ChatBox = () => {
 
   useEffect(() => {
     if (selectedChat) {
-      setMessages(selectedChat.messages);
+      const filteredMessages = selectedChat.messages.filter(
+        (msg) => !msg.content.startsWith("You are a Legal AI Assistant")
+      );
+      setMessages(filteredMessages);
       setChatId(selectedChat.chatId);
     } else {
       setMessages([]);
@@ -57,10 +72,8 @@ const ChatBox = () => {
     };
 
     try {
-      // Send the message to the server
       setMessages((prev) => [...prev, { role: "user", content: input }]);
       setInput("");
-      // const response = await fetch("http://localhost:5000/api/chat", {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/chat",
         {
@@ -71,11 +84,13 @@ const ChatBox = () => {
       );
       const responseData = await response.json();
 
-      // Append ChatGPT's response from the API to the messages array
       if (responseData && responseData.response) {
+        const aiResponse = responseData.response
+          .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
+          .trim();
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: responseData.response },
+          { role: "assistant", content: aiResponse },
         ]);
       } else {
         console.log("No response from API", responseData);
@@ -93,11 +108,10 @@ const ChatBox = () => {
   };
 
   useEffect(() => {
-    // Scroll to the bottom whenever messages change
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]); // Trigger when messages change
+  }, [messages]);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -105,71 +119,169 @@ const ChatBox = () => {
     }
   };
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    // Handle the file upload logic (e.g., sending it to an API or saving it)
+    console.log("Uploaded file:", file);
+  };
+
+  const features = [
+    {
+      title: "Chats",
+      description: "Talk to the assistant",
+      onClick: () => setCurrentTab("chat"),
+    },
+    {
+      title: "Analysis",
+      description: "Upload documents for analysis",
+      onClick: () => setCurrentTab("analysis"),
+    },
+    {
+      title: "Drafting",
+      description: "Create and edit legal documents",
+      onClick: () => setCurrentTab("drafting"),
+    },
+  ];
+
   return (
-    <div className="flex flex-col w-2/3 bg-gray-50 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
-          {selectedChat ? selectedChat.title : "New Chat"}
-        </h2>
-        <button
-          onClick={async () => {
-            if (typeof window !== "undefined") {
-              localStorage.removeItem("token");
-            }
-            setUser(null);
-            setMessages([]);
-            setSelectedChat(null);
-            router.push("/login");
-          }}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Log Out
-        </button>
-      </div>
-      <div className="flex-1 min-h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] overflow-y-auto bg-white p-4 rounded mb-4 shadow">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`mb-2 ${
-              msg.role === "user"
-                ? "text-right"
-                : msg.role === "assistant"
-                ? "text-left"
-                : "hidden"
-            }`}
-          >
-            <p className="inline-block px-3 py-2 bg-gray-100 rounded">
-              {msg.content}
-            </p>
+    <>
+      <div className="flex flex-col items-center w-full min-h-screen bg-gray-50">
+        <div className="w-full max-w-6xl px-4 py-8">
+          {/* Navigation Tabs */}
+          <Tabs value={currentTab} className="mb-8">
+            <TabsList className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground w-auto">
+              <TabsTrigger value="chat" onClick={() => setCurrentTab("chat")}>
+                Chat
+              </TabsTrigger>
+              <TabsTrigger
+                value="analysis"
+                onClick={() => setCurrentTab("analysis")}
+              >
+                Analysis
+              </TabsTrigger>
+              <TabsTrigger
+                value="drafting"
+                onClick={() => setCurrentTab("drafting")}
+              >
+                Drafting
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {/* Logo */}
+
+          <div className="flex items-center justify-center gap-2 mb-12">
+            <div className="w-10 h-10 bg-[#0A0F1C] rounded-lg flex items-center justify-center text-white font-bold text-xl">
+              J
+            </div>
+            <span className="text-2xl font-bold">Juristo</span>
           </div>
-        ))}
-        {loading && (
-          <div className=" mb-2 text-left">
-            <p className="inline-block px-3 py-2 bg-gray-100 rounded">
-              typing...
-            </p>
+
+          {/* Main Content */}
+          <div className="space-y-6 mb-12">
+            <div className="text-center space-y-4">
+              <h1 className="text-4xl font-bold">
+                How can we <span className="text-blue-600">assist</span> you
+                today?
+              </h1>
+              <p className="text-gray-600 max-w-2xl mx-auto">
+                Empower law students and professionals with real-time learning.
+                Simplify complex cases and stay updated with AI-generated
+                summaries.
+              </p>
+            </div>
+
+            {/* Feature Cards Grid */}
+            <div className="grid md:grid-cols-3 gap-6 mt-8">
+              {features.map((feature, index) => (
+                <Card
+                  key={index}
+                  className="p-6 cursor-pointer transition-all hover:shadow-md hover:bg-gray-50"
+                  onClick={feature.onClick}
+                >
+                  <div className="flex flex-col h-full">
+                    <h3 className="text-xl font-semibold mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600 flex-grow mb-4">
+                      {feature.description}
+                    </p>
+                    <Button variant="ghost" className="w-fit">
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Chat or Analysis Section */}
+            {currentTab === "chat" && (
+              <div className="space-y-4 min-h-[200px]">
+                {messages.map((msg, index) => (
+                  <>
+                    <div
+                      key={index}
+                      className={`flex ${
+                        msg.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                          msg.role === "user"
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-900"
+                        }`}
+                      >
+                        {msg.content}
+                      </div>
+                    </div>
+                  </>
+                ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-gray-100">
+                      <Skeleton className="w-[100px] h-[20px] rounded-full" />
+                    </div>
+                  </div>
+                )}
+
+                <div ref={chatEndRef} />
+              </div>
+            )}
           </div>
-        )}
-        <div ref={chatEndRef} />
+
+          {/* Input Area (Only visible in the chat tab) */}
+          {currentTab === "chat" && (
+            <div className="fixed bottom-0 left-0 right-0 p-4 border-1">
+              <div className="max-w-4xl mx-auto flex gap-4">
+                <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+                  <Input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    placeholder="Ask questions for your legal help"
+                    className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <Button variant="ghost" size="icon">
+                    <Mic className="h-5 w-5 text-gray-400" />
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Send
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          {currentTab === "analysis" && <ChatBoxForDocs></ChatBoxForDocs>}
+          {currentTab === "drafting" && <ChatBot></ChatBot>}
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className="flex-1 p-2 border rounded"
-          placeholder="Type a message..."
-        />
-        <button
-          onClick={handleSend}
-          disabled={loading}
-          className=" px-4 py-2 bg-blue-500 text-white rounded"
-        >
-          Send
-        </button>
-      </div>
-    </div>
+    </>
   );
 };
 

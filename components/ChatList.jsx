@@ -1,17 +1,38 @@
 "use client";
-import { MyContext } from "@/context/MyContext";
+
 import { useContext, useEffect, useState } from "react";
-import { FiTrash } from "react-icons/fi"; // Import trash icon
+import { MyContext } from "@/context/MyContext";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { FiTrash } from "react-icons/fi";
+import { useToast } from "@/hooks/use-toast";
+import { ToastProvider } from "./ui/toast";
+import { Toast } from "./ui/toast";
 
 const ChatList = () => {
+  const { toast } = useToast();
   const { user, setSelectedChat, selectedChat, chats, setChats } =
     useContext(MyContext);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
 
   useEffect(() => {
     const fetchChats = async () => {
       const data = await fetch(
         `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
-        // `http://localhost:5000/api/chat/${user.userId}`
       ).then((res) => res.json());
       setChats(data.reverse());
     };
@@ -19,26 +40,29 @@ const ChatList = () => {
   }, [user]);
 
   const deleteChat = async (chatId) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this chat?"
-    );
-    if (!confirmDelete) return;
+    setChatToDelete(chatId); // Set the chatId to be deleted
+    setShowDeleteConfirm(true); // Open the delete confirmation dialog
+  };
+
+  const confirmDeleteChat = async () => {
+    if (!chatToDelete) return;
 
     try {
       const response = await fetch(
-        `https://juristo.wecofy.com/api/chat/${chatId}`,
+        `https://juristo-backend-azure.vercel.app/api/chat/${chatToDelete}`,
         {
           method: "DELETE",
         }
       );
 
       if (response.ok) {
-        // Remove the deleted chat from the chats list
         setChats((prevChats) =>
-          prevChats.filter((chat) => chat.chatId !== chatId)
+          prevChats.filter((chat) => chat.chatId !== chatToDelete)
         );
-        if (selectedChat?.chatId === chatId) setSelectedChat(null); // Deselect chat if it was selected
-        alert("Chat deleted successfully.");
+        if (selectedChat?.chatId === chatToDelete) setSelectedChat(null);
+        toast({
+          title: "Chat deleted successfully",
+        });
       } else {
         alert("Failed to delete chat. Please try again.");
       }
@@ -46,42 +70,116 @@ const ChatList = () => {
       console.error("Error deleting chat:", error);
       alert("An error occurred while deleting the chat.");
     }
+    setShowDeleteConfirm(false); // Close the dialog after confirming
   };
 
+  const clearAllChats = () => {
+    setChats([]);
+    setSelectedChat(null);
+  };
+
+  const filteredChats = chats.filter(
+    (chat) =>
+      chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      chat.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
-    <div className="w-1/3 bg-gray-200 p-4 min-h-screen max-h-screen overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4">Chats</h2>
-
-      {/* New Chat Button */}
-      <button
-        onClick={() => setSelectedChat(null)}
-        className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-      >
-        New Chat
-      </button>
-
-      {chats.map((chat) => (
-        <div
-          key={chat.chatId}
-          className={`p-3 mb-2 bg-white rounded shadow cursor-pointer hover:bg-gray-100 flex items-center justify-between ${
-            chat.chatId === selectedChat?.chatId
-              ? "bg-gray-300 hover:bg-gray-300"
-              : ""
-          }`}
-        >
-          <div onClick={() => setSelectedChat(chat)} className="flex-1">
-            <p>{chat.title}</p>
-            <small>{new Date(chat.createdAt).toLocaleString()}</small>
+    <>
+      <div className="flex h-full flex-col bg-background border-l">
+        <div className="border-b p-4">
+          <h2 className="mb-4 font-bold">My Chats</h2>
+          <div className="relative">
+            <Input
+              placeholder="Search chats..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8"
+            />
           </div>
-          <button
-            onClick={() => deleteChat(chat.chatId)}
-            className="ml-4 text-red-500 hover:text-red-700"
-          >
-            <FiTrash size={20} />
-          </button>
         </div>
-      ))}
-    </div>
+        <div className="border-t p-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowClearConfirm(true)}
+          >
+            Clear All Chats
+          </Button>
+        </div>
+
+        <ScrollArea className="flex-1">
+          <div className="p-4">
+            {filteredChats.map((chat) => (
+              <div
+                key={chat.chatId}
+                className={`mb-4 p-3 rounded-lg shadow transition-colors cursor-pointer hover:bg-accent ${
+                  chat.chatId === selectedChat?.chatId ? "bg-muted" : "bg-card"
+                }`}
+                onClick={() => setSelectedChat(chat)}
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium">{chat.title}</h3>
+                  <Button
+                    variant="ghost"
+                    className="text-red-500 hover:text-red-700"
+                    onClick={() => deleteChat(chat.chatId)}
+                  >
+                    <FiTrash size={16} />
+                  </Button>
+                </div>
+                <small className="text-sm text-muted-foreground">
+                  {new Date(chat.createdAt).toLocaleString()}
+                </small>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+
+        <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear All Chats</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to clear all chats? This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={clearAllChats}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Chat Confirmation Dialog */}
+        <AlertDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Chat</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this chat? This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setShowDeleteConfirm(false)}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteChat}>
+                Confirm
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+      <ToastProvider />
+    </>
   );
 };
 

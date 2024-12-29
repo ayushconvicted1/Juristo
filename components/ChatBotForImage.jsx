@@ -143,25 +143,11 @@ const ChatBoxForDocs = () => {
   };
 
   return (
-    <div className="flex flex-col w-2/3 bg-gray-50 p-4">
+    <div className="flex flex-col w-full bg-gray-50 p-4">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">
           {selectedChat ? selectedChat.title : "New Chat"}
         </h2>
-        <button
-          onClick={async () => {
-            if (typeof window !== "undefined") {
-              localStorage.removeItem("token");
-            }
-            setUser(null);
-            setMessages([]);
-            setSelectedChat(null);
-            router.push("/login");
-          }}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-        >
-          Log Out
-        </button>
       </div>
       <div className="flex-1 min-h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] overflow-y-auto bg-white p-4 rounded mb-4 shadow">
         {messages.map((msg, index) => (
