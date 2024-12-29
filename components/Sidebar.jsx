@@ -17,8 +17,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { MyContext } from "@/context/MyContext";
+import { useRouter } from "next/navigation";
 
 export default function SIdebar() {
+  const router = useRouter();
   const { user, setSelectedChat, selectedChat, chats, setChats } =
     useContext(MyContext);
   const [showSettings, setShowSettings] = useState(false);
@@ -72,10 +74,10 @@ export default function SIdebar() {
             if (typeof window !== "undefined") {
               localStorage.removeItem("token");
             }
+            router.push("/login");
             setUser(null);
             setMessages([]);
             setSelectedChat(null);
-            router.push("/login");
           }}
         >
           Log Out

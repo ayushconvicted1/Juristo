@@ -1,6 +1,21 @@
 "use client";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { FaExclamationTriangle } from "react-icons/fa";
+import { Loader2 } from "lucide-react";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +24,7 @@ const Signup = () => {
     password: "",
   });
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleChange = (e) => {
@@ -18,11 +34,12 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+    setIsLoading(true);
     try {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/auth/signup",
         {
-          // const response = await fetch("http://localhost:5000/api/auth/signup", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
@@ -33,75 +50,113 @@ const Signup = () => {
       router.push("/login"); // Redirect to login page on success
     } catch (err) {
       setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form
-        className="bg-white shadow-md rounded px-8 pt-6 pb-8 w-96"
-        onSubmit={handleSubmit}
-      >
-        <h2 className="text-2xl font-bold mb-6">Sign Up</h2>
-        {error && <p className="text-red-500">{error}</p>}
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Name
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Enter your name"
-            required
-          />
-        </div>
-        <div className="mb-4">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Email
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Enter your email"
-            required
-          />
-        </div>
-        <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Enter your password"
-            required
-          />
-        </div>
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full"
-        >
-          Sign Up
-        </button>
-        <p className="text-center text-sm mt-4">
-          Already have an account?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="text-blue-500 cursor-pointer hover:underline"
-          >
-            Login Now
-          </span>
-        </p>
-      </form>
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-black">
+      {/* Star Pattern Animation */}
+      <div className="star-container absolute inset-0 w-full h-full">
+        {[...Array(100)].map((_, index) => (
+          <span key={index} className="star" />
+        ))}
+      </div>
+      <Card className="w-full max-w-md shadow-xl relative z-10 bg-black/50 border-gray-800">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-3xl font-bold text-center text-white">
+            Create an Account
+          </CardTitle>
+          <CardDescription className="text-center text-gray-400">
+            Enter your details to sign up
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-gray-200">
+                Full Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-200">
+                Email
+              </Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="m@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-gray-200">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            {error && (
+              <Alert variant="destructive">
+                <FaExclamationTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                "Sign Up"
+              )}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-center text-sm w-full text-gray-400">
+            Already have an account?{" "}
+            <span
+              onClick={() => router.push("/login")}
+              className="text-blue-400 font-semibold cursor-pointer hover:underline"
+            >
+              Log in here
+            </span>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 };
