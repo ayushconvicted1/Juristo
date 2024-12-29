@@ -1,9 +1,15 @@
 "use client";
-import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
 import React, { useContext, useEffect, useRef, useState } from "react";
+import { MyContext } from "@/context/MyContext";
 import { FaImage, FaFilePdf } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ClipLoader } from "react-spinners";
+import { Skeleton } from "./ui/skeleton";
+import { Mic } from "lucide-react";
 
 const ChatBoxForDocs = () => {
   const chatEndRef = useRef(null);
@@ -11,7 +17,7 @@ const ChatBoxForDocs = () => {
   const [imgSelected, setImgSelected] = useState(false);
   const [input, setInput] = useState("");
   const [chatId, setChatId] = useState(null);
-  const { user, selectedChat, fetchDocChats, setUser, setSelectedChat } =
+  const { user, selectedChat, fetchDocChats, setSelectedChat } =
     useContext(MyContext);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +26,6 @@ const ChatBoxForDocs = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("token");
-
       if (!token) {
         router.push("/login");
       }
@@ -55,19 +60,14 @@ const ChatBoxForDocs = () => {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
         {
-          // const response = await fetch("http://localhost:5000/api/image-chat/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(newMessage),
         }
       );
       const responseData = await response.json();
-      console.log(responseData);
-
       if (responseData && responseData.chat) {
         setSelectedChat(responseData.chat);
-      } else {
-        console.log("No response from API", responseData);
       }
       setLoading(false);
     } catch (error) {
@@ -81,12 +81,6 @@ const ChatBoxForDocs = () => {
     }
   }, [messages]);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      handleSend();
-    }
-  };
-
   const handleFileUpload = async (file, type) => {
     const formData = new FormData();
     formData.append("image", file);
@@ -95,7 +89,6 @@ const ChatBoxForDocs = () => {
 
     try {
       setLoading(true);
-      // const response = await fetch("http://localhost:5000/api/image-chat/process-file", {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/image-chat/process-file",
         {
@@ -118,8 +111,6 @@ const ChatBoxForDocs = () => {
         setSelectedChat(result.chat);
         setImgSelected(true);
         fetchDocChats(user);
-      } else {
-        console.error("Error in file upload:", result.error);
       }
     } catch (error) {
       console.error("Error during file upload:", error);
@@ -143,86 +134,95 @@ const ChatBoxForDocs = () => {
   };
 
   return (
-    <div className="flex flex-col w-full bg-gray-50 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">
-          {selectedChat ? selectedChat.title : "New Chat"}
-        </h2>
-      </div>
-      <div className="flex-1 min-h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] overflow-y-auto bg-white p-4 rounded mb-4 shadow">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`mb-2 ${
-              msg.role === "user"
-                ? "text-right"
-                : msg.role === "assistant"
-                ? "text-left"
-                : "hidden"
-            }`}
-          >
-            <p className="inline-block px-3 py-2 bg-gray-100 rounded">
-              {msg.content}
-            </p>
+    <div className="w-[800px] bg-white shadow rounded-lg">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            {selectedChat ? selectedChat.title : "New Chat"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="h-[600px] flex flex-col gap-4">
+          <div className="flex-1 bg-gray-50 overflow-y-auto p-4 rounded">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`mb-2 ${
+                  msg.role === "user"
+                    ? "text-right"
+                    : msg.role === "assistant"
+                    ? "text-left"
+                    : "hidden"
+                }`}
+              >
+                <p className="inline-block px-3 py-2 bg-gray-100 rounded-md">
+                  {msg.content}
+                </p>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="max-w-[80%] px-4 py-2 rounded-lg bg-gray-100">
+                  <Skeleton className="w-[100px] h-[20px] rounded-full" />
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
-        ))}
-        {loading && (
-          <div className=" mb-2 text-left">
-            <p className="inline-block px-3 py-2 bg-gray-100 rounded">
-              typing...
-            </p>
-          </div>
-        )}
-        <div ref={chatEndRef} />
-      </div>
-      <div className="flex items-center gap-2">
-        {imgSelected ? (
-          <>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 p-2 border rounded"
-              placeholder="Type a message..."
-            />
-            <button
-              onClick={handleSend}
-              disabled={loading}
-              className=" px-4 py-2 bg-blue-500 text-white rounded"
-            >
-              Send
-            </button>
-          </>
-        ) : (
-          <div className="flex justify-center w-full items-center gap-2">
-            {loading ? (
-              <ClipLoader size="25" color="#000" loading={loading} />
-            ) : (
+          <div className="border-t pt-4 flex gap-2 items-center">
+            {imgSelected ? (
               <>
-                <label className="cursor-pointer">
-                  <FaImage className="text-xl text-blue-500" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
+                <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+                  <Input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                    placeholder="Ask questions now"
+                    className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-                </label>
-                <label className="cursor-pointer">
-                  <FaFilePdf className="text-xl text-red-500" />
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={handlePDFUpload}
-                    className="hidden"
-                  />
-                </label>
+                  <Button variant="ghost" size="icon">
+                    <Mic className="h-5 w-5 text-gray-400" />
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={loading}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Send
+                  </Button>
+                </div>
               </>
+            ) : (
+              <div className="w-full flex justify-center gap-4">
+                {loading ? (
+                  <ClipLoader size={25} color="#000" loading={loading} />
+                ) : (
+                  <>
+                    <label className="cursor-pointer">
+                      <FaImage className="text-xl text-blue-500" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    <label className="cursor-pointer">
+                      <FaFilePdf className="text-xl text-red-500" />
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        onChange={handlePDFUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

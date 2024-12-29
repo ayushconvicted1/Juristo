@@ -17,7 +17,6 @@ const MyProvider = ({ children }) => {
     label: "English",
   });
   const [chats, setChats] = useState([]);
-  const [currentTab, setCurrentTab] = useState("home"); // Added state for currentTab
   const router = useRouter();
 
   useEffect(() => {
@@ -48,6 +47,7 @@ const MyProvider = ({ children }) => {
     try {
       const response = await fetch(
         `https://juristo-backend-azure.vercel.app/api/users/get/${email}`
+        // http://localhost:5000/api/users/get/${email}
       );
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
@@ -66,6 +66,7 @@ const MyProvider = ({ children }) => {
   const fetchChats = async (user) => {
     const data = await fetch(
       `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
+      // http://localhost:5000/api/chat/${user.userId}
     ).then((res) => res.json());
     setChats(data.reverse());
   };
@@ -73,6 +74,7 @@ const MyProvider = ({ children }) => {
   const fetchDocChats = async (user) => {
     const data = await fetch(
       `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
+      // http://localhost:5000/api/image-chat/${user.userId}
     ).then((res) => res.json());
     setChats(data.reverse());
   };
@@ -93,8 +95,6 @@ const MyProvider = ({ children }) => {
         selectedCountry,
         setSelectedLanguage,
         selectedLanguage,
-        currentTab, // Provide currentTab to context
-        setCurrentTab, // Provide setCurrentTab to context
       }}
     >
       {children}
