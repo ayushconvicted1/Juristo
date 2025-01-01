@@ -16,9 +16,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { FiTrash } from "react-icons/fi";
+import { LucidePin, LuPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ToastProvider } from "./ui/toast";
-import { Toast } from "./ui/toast";
 
 const ChatList = () => {
   const { toast } = useToast();
@@ -28,13 +28,20 @@ const ChatList = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [chatToDelete, setChatToDelete] = useState(null);
+  const [pinnedChats, setPinnedChats] = useState([]);
 
   useEffect(() => {
     const fetchChats = async () => {
-      const data = await fetch(
-        `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
-      ).then((res) => res.json());
-      setChats(data.reverse());
+      if (!user?.userId) return; // Ensure user and userId are available
+
+      try {
+        const data = await fetch(
+          `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
+        ).then((res) => res.json());
+        setChats(data.reverse());
+      } catch (error) {
+        console.error("Error fetching chats:", error);
+      }
     };
     fetchChats();
   }, [user]);
@@ -73,6 +80,16 @@ const ChatList = () => {
     setShowDeleteConfirm(false); // Close the dialog after confirming
   };
 
+  const pinChat = (chatId) => {
+    setPinnedChats((prev) => {
+      if (prev.includes(chatId)) {
+        return prev.filter((id) => id !== chatId);
+      } else {
+        return [chatId, ...prev];
+      }
+    });
+  };
+
   const clearAllChats = () => {
     setChats([]);
     setSelectedChat(null);
@@ -83,6 +100,13 @@ const ChatList = () => {
       chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chat.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const sortedChats = [
+    ...pinnedChats
+      .map((id) => chats.find((chat) => chat.chatId === id))
+      .filter(Boolean),
+    ...filteredChats.filter((chat) => !pinnedChats.includes(chat.chatId)),
+  ];
 
   return (
     <>
@@ -98,19 +122,9 @@ const ChatList = () => {
             />
           </div>
         </div>
-        <div className="border-t p-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => setShowClearConfirm(true)}
-          >
-            Clear All Chats
-          </Button>
-        </div>
-
-        <ScrollArea className="flex-1">
-          <div className="p-4">
-            {filteredChats.map((chat) => (
+        <ScrollArea className="flex-1 relative">
+          <div className="p-4 pb-16">
+            {sortedChats.map((chat) => (
               <div
                 key={chat.chatId}
                 className={`mb-4 p-3 rounded-lg shadow transition-colors cursor-pointer hover:bg-accent ${
@@ -120,13 +134,24 @@ const ChatList = () => {
               >
                 <div className="flex justify-between items-center mb-2">
                   <h3 className="font-medium">{chat.title}</h3>
-                  <Button
-                    variant="ghost"
-                    className="text-red-500 hover:text-red-700"
-                    onClick={() => deleteChat(chat.chatId)}
-                  >
-                    <FiTrash size={16} />
-                  </Button>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      className={`text-yellow-500 hover:text-yellow-700 ${
+                        pinnedChats.includes(chat.chatId) && "text-yellow-700"
+                      }`}
+                      onClick={() => pinChat(chat.chatId)}
+                    >
+                      <LucidePin size={16} />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="text-red-500 hover:text-red-700"
+                      onClick={() => deleteChat(chat.chatId)}
+                    >
+                      <FiTrash size={16} />
+                    </Button>
+                  </div>
                 </div>
                 <small className="text-sm text-muted-foreground">
                   {new Date(chat.createdAt).toLocaleString()}
@@ -134,7 +159,17 @@ const ChatList = () => {
               </div>
             ))}
           </div>
+          <div className="absolute bottom-0 left-0 w-full h-12 bg-gradient-to-t from-background to-transparent pointer-events-none" />
         </ScrollArea>
+        <div className="border-t p-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setShowClearConfirm(true)}
+          >
+            Clear All Chats
+          </Button>
+        </div>
 
         <AlertDialog open={showClearConfirm} onOpenChange={setShowClearConfirm}>
           <AlertDialogContent>

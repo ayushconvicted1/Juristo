@@ -3,7 +3,7 @@
 import { useContext, useState } from "react";
 import { MyContext } from "@/context/MyContext";
 import toast from "react-hot-toast";
-import { ClipLoader } from "react-spinners";
+import { HashLoader } from "react-spinners";
 
 const ChatBot = () => {
   const { user } = useContext(MyContext);
@@ -15,7 +15,7 @@ const ChatBot = () => {
   const [docxUrl, setDocxUrl] = useState(null);
   const [userInput, setUserInput] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-
+  console.log(user.userId);
   const fetchQuestions = async () => {
     try {
       setLoading(true);
@@ -141,7 +141,7 @@ const ChatBot = () => {
               } text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
               {loading ? (
-                <ClipLoader size={20} color="#fff" />
+                <HashLoader size={20} color="#fff" />
               ) : (
                 "Generate Questions"
               )}
@@ -180,7 +180,7 @@ const ChatBot = () => {
           )}
       </div>
       {loading && (
-        <ClipLoader
+        <HashLoader
           size={30}
           color="#00BFFF"
           loading={loading}

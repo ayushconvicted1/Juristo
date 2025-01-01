@@ -7,100 +7,166 @@ import {
   MessageSquare,
   Settings,
   HelpCircle,
+  LogOut,
 } from "lucide-react";
-import { ModeToggle } from "./mode-toggle";
-import { useContext, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useContext, useState } from "react";
 import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
-export default function SIdebar() {
+export default function Sidebar() {
   const router = useRouter();
-  const { user, setSelectedChat, selectedChat, chats, setChats } =
-    useContext(MyContext);
+  const {
+    user,
+    setSelectedChat,
+    selectedChat,
+    chats,
+    setChats,
+    setUser,
+    setMessages,
+  } = useContext(MyContext);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
 
-  return (
-    <div className="flex h-full flex-col border-r bg-background p-4">
-      <div className="flex items-center gap-2 pb-4">
-        <div className="h-8 w-8 rounded-lg bg-primary" />
-        <h1 className="text-xl font-bold">Juristo</h1>
-      </div>
-      <div className="flex flex-1 flex-col gap-2">
-        <Button
-          variant="ghost"
-          className="justify-start gap-2"
-          onClick={() => setSelectedChat(null)}
-        >
-          <MessageSquarePlus className="h-5 w-5" />
-          Start new chat
-        </Button>
+  const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      // Clear any other stored data
+      localStorage.clear();
+    }
+    router.push("/login");
+    setUser(null);
+    setMessages([]);
+    setSelectedChat(null);
+  };
 
-        <Button
-          variant="ghost"
-          className="justify-start gap-2"
-          onClick={() => {
-            const newChat = {
-              id: Date.now().toString(),
-              title: "New AI Chat",
-              description: "Start a new conversation with AI",
-              time: new Date().toLocaleTimeString(),
-              isNew: true,
-              messages: [],
-            };
-            setActiveChat(newChat);
-          }}
-        >
-          <MessageSquare className="h-5 w-5" />
-          AI chat
-        </Button>
-        <Button
-          variant="ghost"
-          className="justify-start gap-2"
-          onClick={() => setShowSettings(true)}
-        >
-          <Settings className="h-5 w-5" />
-          Settings
-        </Button>
-        <Button
-          variant="destructive"
-          onClick={async () => {
-            if (typeof window !== "undefined") {
-              localStorage.removeItem("token");
-            }
-            router.push("/login");
-            setUser(null);
-            setMessages([]);
-            setSelectedChat(null);
-          }}
-        >
-          Log Out
-        </Button>
-        <Button
-          variant="ghost"
-          className="justify-start gap-2"
-          onClick={() => setShowHelp(true)}
-        >
-          <HelpCircle className="h-5 w-5" />
-          Updates and FAQ
-        </Button>
+  const navItems = [
+    {
+      icon: MessageSquarePlus,
+      label: "Start new chat",
+      onClick: () => setSelectedChat(null),
+    },
+    {
+      icon: MessageSquare,
+      label: "AI chat",
+      onClick: () => {
+        const newChat = {
+          id: Date.now().toString(),
+          title: "New AI Chat",
+          description: "Start a new conversation with AI",
+          time: new Date().toLocaleTimeString(),
+          isNew: true,
+          messages: [],
+        };
+        setSelectedChat(newChat);
+      },
+      isActive: true,
+    },
+    {
+      icon: Settings,
+      label: "Settings",
+      onClick: () => setShowSettings(true),
+    },
+    {
+      icon: HelpCircle,
+      label: "Updates and FAQ",
+      onClick: () => setShowHelp(true),
+    },
+  ];
+
+  return (
+    <div className="flex h-full w-[280px] flex-col border-r bg-background py-4">
+      <div className="flex items-center gap-2 px-4 pb-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background font-bold">
+          J
+        </div>
+        <h1 className="text-xl font-medium tracking-tight">Juristo</h1>
       </div>
-      <div className="p-4 border-t">
-        <div className="bg-gradient-to-r from-blue-900 to-blue-700 text-white rounded-lg p-4">
-          <h3 className="font-bold">Go Premium Now!</h3>
-          <p className="text-sm">Get your legal work easily done</p>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-lg font-bold">$70 /month</span>
-            <Button size="sm" variant="secondary">
-              Get
-            </Button>
+
+      <div className="flex-1 space-y-1 px-2">
+        {navItems.map((item) => (
+          <button
+            key={item.label}
+            onClick={item.onClick}
+            className={cn(
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-accent",
+              item.isActive && "text-blue-600"
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-4 mt-auto">
+        <Card className="overflow-hidden">
+          <div className="bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white">
+            <h3 className="font-semibold">Go Premium Now!</h3>
+            <p className="text-xs text-white/80">
+              Get your legal work easily done
+            </p>
+            <div className="mt-3 flex items-center justify-between">
+              <span className="font-semibold">
+                $70{" "}
+                <span className="text-xs font-normal text-white/80">
+                  /month
+                </span>
+              </span>
+              <Button
+                size="sm"
+                className="h-7 bg-white text-[#0A2540] hover:bg-white/90"
+              >
+                Get
+              </Button>
+            </div>
           </div>
+        </Card>
+
+        <div className="mt-4 flex items-center justify-between border-t pt-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 hover:opacity-80">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>A</AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium">Alexandra</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[200px]">
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Dashboard
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
