@@ -1,12 +1,12 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import { MyContext } from "@/context/MyContext";
 import toast from "react-hot-toast";
 import { HashLoader } from "react-spinners";
 
 const ChatBot = () => {
-  const { user } = useContext(MyContext);
+  const { user } = useContext(MyContext) || {}; // Provide fallback to avoid null errors
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -15,11 +15,22 @@ const ChatBot = () => {
   const [docxUrl, setDocxUrl] = useState(null);
   const [userInput, setUserInput] = useState("");
   const [currentAnswer, setCurrentAnswer] = useState("");
-  console.log(user.userId);
+
+  // Debugging user object
+  useEffect(() => {
+    if (!user) {
+      console.warn("User is not initialized. Ensure proper context setup.");
+    }
+  }, [user]);
+
   const fetchQuestions = async () => {
+    if (!user || !user.country) {
+      toast.error("User information is missing. Please log in.");
+      return;
+    }
+
     try {
       setLoading(true);
-      // const response = await fetch("http://localhost:5000/api/legaldocs/questions", {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/legaldocs/questions",
         {
@@ -66,9 +77,13 @@ const ChatBot = () => {
   };
 
   const handleGenerate = async (answersToGenerate) => {
+    if (!user || !user.userId || !user.country) {
+      toast.error("User information is incomplete. Please log in.");
+      return;
+    }
+
     try {
       setLoading(true);
-      // const response = await fetch("http://localhost:5000/api/legaldocs/generate", {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/legaldocs/generate",
         {
@@ -90,9 +105,7 @@ const ChatBot = () => {
           URL.createObjectURL(
             new Blob(
               [Uint8Array.from(atob(data.pdf), (c) => c.charCodeAt(0))],
-              {
-                type: "application/pdf",
-              }
+              { type: "application/pdf" }
             )
           )
         );
