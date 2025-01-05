@@ -14,17 +14,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-import { FaExclamationTriangle } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { user, fetchUserData } = useContext(MyContext);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user) {
@@ -39,12 +37,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
     setIsLoading(true);
     try {
       const response = await fetch(
-        // "https://juristo-backend-azure.vercel.app/api/auth/login",
-        "http://localhost:5000/api/auth/login",
+        "https://juristo-backend-azure.vercel.app/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -57,22 +53,26 @@ const Login = () => {
         localStorage.setItem("token", data.token);
       }
       await fetchUserData(formData.email);
+      toast({
+        title: "Success",
+        description: "You have successfully logged in.",
+        variant: "default",
+      });
       router.push("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "An error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-black">
-      {/* Star Pattern Animation */}
-      <div className="star-container absolute inset-0 w-full h-full">
-        {[...Array(100)].map((_, index) => (
-          <span key={index} className="star" />
-        ))}
-      </div>
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
       <Card className="w-full max-w-md shadow-xl relative z-10 bg-black/50 border-gray-800">
         <CardHeader className="space-y-1">
           <CardTitle className="text-3xl font-bold text-center text-white">
@@ -116,16 +116,9 @@ const Login = () => {
                 className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
-            {error && (
-              <Alert variant="destructive">
-                <FaExclamationTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
               disabled={isLoading}
             >
               {isLoading ? (

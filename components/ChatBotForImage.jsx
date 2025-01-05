@@ -134,8 +134,8 @@ const ChatBoxForDocs = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        // "https://juristo-backend-azure.vercel.app/api/image-chat/process-file",
-        "http://localhost:5000/api/image-chat/process-file",
+        "https://juristo-backend-azure.vercel.app/api/image-chat/process-file",
+        // "http://localhost:5000/api/image-chat/process-file",
         {
           method: "POST",
           body: formData,
