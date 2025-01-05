@@ -193,6 +193,7 @@ const ChatBot = () => {
 
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/legaldocs/generate",
+        // "http://localhost:5000/api/legaldocs/generate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
