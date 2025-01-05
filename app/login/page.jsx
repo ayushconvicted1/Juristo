@@ -43,7 +43,8 @@ const Login = () => {
     setIsLoading(true);
     try {
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/auth/login",
+        // "https://juristo-backend-azure.vercel.app/api/auth/login",
+        "http://localhost:5000/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

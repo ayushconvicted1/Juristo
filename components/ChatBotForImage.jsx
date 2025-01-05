@@ -1,18 +1,44 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { MyContext } from "@/context/MyContext";
-import { FaImage, FaFilePdf } from "react-icons/fa";
+import { format, isValid } from "date-fns";
+import {
+  ArrowUpRight,
+  Copy,
+  Mic,
+  Moon,
+  RefreshCw,
+  Volume2,
+  Upload,
+  File,
+  X,
+  ImageIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipLoader } from "react-spinners";
-import { Skeleton } from "./ui/skeleton";
-import { Mic } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
+import { toast } from "react-hot-toast";
+import { HashLoader } from "react-spinners";
+import cn from "classnames";
+
+const formatMessageTime = (timestamp) => {
+  if (timestamp && !isNaN(new Date(timestamp).getTime())) {
+    return format(new Date(timestamp), "dd MMM • h:mm a");
+  }
+  return ""; // or return a placeholder like "No time"
+};
 
 const ChatBoxForDocs = () => {
+  const router = useRouter();
   const chatEndRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [messages, setMessages] = useState([]);
   const [imgSelected, setImgSelected] = useState(false);
   const [input, setInput] = useState("");
@@ -20,8 +46,10 @@ const ChatBoxForDocs = () => {
   const { user, selectedChat, fetchDocChats, setSelectedChat } =
     useContext(MyContext);
   const [loading, setLoading] = useState(false);
-
-  const router = useRouter();
+  const [currentTab, setCurrentTab] = useState("documentation");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(3);
+  const [uploadedFile, setUploadedFile] = useState(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -44,9 +72,15 @@ const ChatBoxForDocs = () => {
     }
   }, [selectedChat]);
 
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
+
   const handleSend = async () => {
-    setLoading(true);
     if (!input.trim()) return;
+    setLoading(true);
 
     const newMessage = {
       userId: user.userId,
@@ -55,10 +89,14 @@ const ChatBoxForDocs = () => {
     };
 
     try {
-      setMessages((prev) => [...prev, { role: "user", content: input }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content: input, timestamp: new Date() },
+      ]);
       setInput("");
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
+        // "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
+        "http://localhost:5000/api/image-chat/chat",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -68,18 +106,24 @@ const ChatBoxForDocs = () => {
       const responseData = await response.json();
       if (responseData && responseData.chat) {
         setSelectedChat(responseData.chat);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content:
+              responseData.chat.messages[responseData.chat.messages.length - 1]
+                .content,
+            timestamp: new Date(),
+          },
+        ]);
       }
-      setLoading(false);
     } catch (error) {
       console.error("Error sending message:", error);
+      toast.error("Failed to send message. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
 
   const handleFileUpload = async (file, type) => {
     const formData = new FormData();
@@ -90,7 +134,8 @@ const ChatBoxForDocs = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/image-chat/process-file",
+        // "https://juristo-backend-azure.vercel.app/api/image-chat/process-file",
+        "http://localhost:5000/api/image-chat/process-file",
         {
           method: "POST",
           body: formData,
@@ -105,62 +150,212 @@ const ChatBoxForDocs = () => {
       if (result.message === "Analyzed successfully.") {
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `AI Response: ${result.message}` },
+          {
+            role: "assistant",
+            content: `AI Response: ${result.message}`,
+            timestamp: new Date(),
+          },
         ]);
         setChatId(result.chatId);
         setSelectedChat(result.chat);
         setImgSelected(true);
+        setUploadedFile(file);
         fetchDocChats(user);
+        toast.success("File uploaded and analyzed successfully");
       }
     } catch (error) {
       console.error("Error during file upload:", error);
+      toast.error("Failed to upload and analyze file. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImageUpload = (e) => {
+  const handleFileInputChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      handleFileUpload(file, "image");
+      const fileType = file.type.startsWith("image/") ? "image" : "pdf";
+      handleFileUpload(file, fileType);
     }
   };
 
-  const handlePDFUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      handleFileUpload(file, "pdf");
+  const removeFile = () => {
+    setUploadedFile(null);
+    setImgSelected(false);
+    setMessages([]);
+    setChatId(null);
+    setSelectedChat(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
+  };
+
+  const handleCopy = (content) => {
+    navigator.clipboard
+      .writeText(content)
+      .then(() => toast.success("Copied to clipboard"))
+      .catch(() => toast.error("Failed to copy"));
+  };
+
+  const handleGenerateResponse = async (content) => {
+    toast.success("Regenerating response...");
+    // Implement regenerate logic here
+  };
+
+  const handleAudioToggle = () => {
+    toast.success("Audio feature coming soon!");
   };
 
   return (
-    <div className="w-[800px] bg-white shadow rounded-lg">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">
-            {selectedChat ? selectedChat.title : "New Chat"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="h-[600px] flex flex-col gap-4">
-          <div className="flex-1 bg-gray-50 overflow-y-auto p-4 rounded">
+    <div className="flex flex-col h-full">
+      {/* Upload Area or Chat Area */}
+      <ScrollArea className="flex-1 p-4">
+        {!imgSelected ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg p-6">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              accept="image/*,.pdf"
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="mb-4"
+              disabled={loading}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload PDF or Image
+            </Button>
+            <p className="text-sm text-gray-500">
+              Supported formats: PDF, JPEG, PNG
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {uploadedFile && (
+              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
+                <div className="flex items-center gap-2">
+                  {uploadedFile.type.startsWith("image/") ? (
+                    <ImageIcon className="w-5 h-5 text-gray-500" />
+                  ) : (
+                    <File className="w-5 h-5 text-gray-500" />
+                  )}
+                  <span className="text-sm font-medium">
+                    {uploadedFile.name}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={removeFile}
+                  className="hover:bg-gray-200"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
             {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`mb-2 ${
-                  msg.role === "user"
-                    ? "text-right"
-                    : msg.role === "assistant"
-                    ? "text-left"
-                    : "hidden"
-                }`}
-              >
-                <p className="inline-block px-3 py-2 bg-gray-100 rounded-md">
-                  {msg.content}
-                </p>
+              <div key={index} className="space-y-4">
+                {index === 0 && (
+                  <div className="text-center text-sm text-gray-500">Today</div>
+                )}
+                <div
+                  className={`flex ${
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  } gap-3`}
+                >
+                  {msg.role === "assistant" && (
+                    <Avatar className="w-7 h-7">
+                      <AvatarFallback>J</AvatarFallback>
+                    </Avatar>
+                  )}
+                  <div className="flex flex-col gap-2 max-w-[80%]">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold">
+                        {msg.role === "user" ? "You" : "Response"}
+                      </span>
+                      <span className="text-[10px] text-gray-500">
+                        {formatMessageTime(msg.timestamp)}
+                      </span>
+                      {index === messages.length - 1 && (
+                        <span className="text-xs text-gray-500">
+                          {currentPage}/{totalPages}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className={`px-3 py-1.5 rounded-lg text-xs ${
+                        msg.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-900"
+                      }`}
+                    >
+                      {msg.content}
+                    </div>
+                    {msg.role === "assistant" && (
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
+                          >
+                            😊
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
+                          >
+                            ☹️
+                          </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-gray-100 rounded-full"
+                            onClick={() => handleGenerateResponse(msg.content)}
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-gray-100 rounded-full"
+                            onClick={() => handleCopy(msg.content)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-gray-100 rounded-full"
+                            onClick={handleAudioToggle}
+                          >
+                            <Volume2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {msg.role === "user" && (
+                    <Avatar className="w-7 h-7">
+                      <AvatarImage src="/placeholder.svg" />
+                      <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                  )}
+                </div>
               </div>
             ))}
             {loading && (
-              <div className="flex justify-start">
+              <div className="flex justify-start gap-3">
+                <Avatar className="w-7 h-7">
+                  <AvatarFallback>J</AvatarFallback>
+                </Avatar>
                 <div className="max-w-[80%] px-4 py-2 rounded-lg bg-gray-100">
                   <Skeleton className="w-[100px] h-[20px] rounded-full" />
                 </div>
@@ -168,61 +363,36 @@ const ChatBoxForDocs = () => {
             )}
             <div ref={chatEndRef} />
           </div>
-          <div className="border-t pt-4 flex gap-2 items-center">
-            {imgSelected ? (
-              <>
-                <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
-                  <Input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder="Ask questions now"
-                    className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-                  />
-                  <Button variant="ghost" size="icon">
-                    <Mic className="h-5 w-5 text-gray-400" />
-                  </Button>
-                  <Button
-                    onClick={handleSend}
-                    disabled={loading}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Send
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <div className="w-full flex justify-center gap-4">
-                {loading ? (
-                  <ClipLoader size={25} color="#000" loading={loading} />
-                ) : (
-                  <>
-                    <label className="cursor-pointer">
-                      <FaImage className="text-xl text-blue-500" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                    <label className="cursor-pointer">
-                      <FaFilePdf className="text-xl text-red-500" />
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={handlePDFUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </>
-                )}
-              </div>
-            )}
+        )}
+      </ScrollArea>
+
+      {/* Input Area - Only shown after file upload */}
+      {imgSelected && (
+        <div className="sticky bottom-0 bg-gray-50 p-4">
+          <div className="max-w-4xl mx-auto flex gap-4">
+            <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+              <Input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                placeholder="Ask questions about your document..."
+                className="flex-1 border-0 focus-visible:ring-0 bg-white focus-visible:ring-offset-0"
+              />
+              <Button variant="ghost" size="icon">
+                <Mic className="h-5 w-5 text-gray-400" />
+              </Button>
+              <Button
+                onClick={handleSend}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Send
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
     </div>
   );
 };

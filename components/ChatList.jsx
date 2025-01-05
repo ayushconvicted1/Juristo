@@ -36,7 +36,8 @@ const ChatList = () => {
 
       try {
         const data = await fetch(
-          `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
+          // `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
+          `http://localhost:5000/api/chat/${user.userId}`
         ).then((res) => res.json());
         setChats(data.reverse());
       } catch (error) {
@@ -56,7 +57,8 @@ const ChatList = () => {
 
     try {
       const response = await fetch(
-        `https://juristo-backend-azure.vercel.app/api/chat/${chatToDelete}`,
+        // `https://juristo-backend-azure.vercel.app/api/chat/${chatToDelete}`,
+        `http://localhost:5000/api/chat/${chatToDelete}`,
         {
           method: "DELETE",
         }

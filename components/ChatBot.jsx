@@ -192,12 +192,12 @@ export default function ChatBox() {
       onClick: () => setCurrentTab("chat"),
     },
     {
-      title: "Document Drafting",
+      title: "Case Prediction",
       description: "Lorem ipsum dolor sit amet, consectetur",
       onClick: () => setCurrentTab("analysis"),
     },
     {
-      title: "Case Prediction",
+      title: "Document Drafting",
       description: "Lorem ipsum dolor sit amet, consectetur",
       onClick: () => setCurrentTab("drafting"),
     },
@@ -216,7 +216,7 @@ export default function ChatBox() {
         >
           <div
             className={cn(
-              "transition-all duration-500 ease-in-out sticky top-0 bg-gray-50/80 backdrop-blur-sm z-10",
+              "transition-all duration-500 ease-in-out sticky top-0 bg-gray-50 backdrop-blur-sm z-10",
               showFeatures ? "py-6" : "py-3"
             )}
           >
@@ -242,7 +242,7 @@ export default function ChatBox() {
                 >
                   {selectedChat?.title || "New Chat"}
                 </h1> */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 bg-gray-50">
                   <div className="flex items-center gap-2 px-2 py-2 rounded-full">
                     <span className="text-xsm font-medium">
                       Country : India
@@ -308,13 +308,9 @@ export default function ChatBox() {
             )}
           >
             <div className="w-12 h-12 bg-[#0A0F1C] rounded-xl flex items-center justify-center">
-              <Image
-                src="/juristo-logo.png"
-                alt="Juristo"
-                width={24}
-                height={24}
-                className="text-white"
-              />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background font-bold">
+                J
+              </div>
             </div>
             <span className="text-xl font-bold text-[#0A0F1C]">Juristo</span>
           </div>
@@ -356,6 +352,8 @@ export default function ChatBox() {
               </>
             )}
 
+            {currentTab === "analysis" && <ChatBoxForDocs />}
+            {currentTab === "drafting" && <ChatBot />}
             {currentTab === "chat" && (
               <div className="space-y-6 min-h-[200px]">
                 {messages.map((msg, index) => (
@@ -480,9 +478,6 @@ export default function ChatBox() {
             </div>
           </div>
         )}
-
-        {currentTab === "analysis" && <ChatBoxForDocs />}
-        {currentTab === "drafting" && <ChatBot />}
       </div>
     </div>
   );

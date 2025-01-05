@@ -87,6 +87,9 @@ export default function Sidebar() {
       onClick: () => setShowHelp(true),
     },
   ];
+  const handleclick = () => {
+    router.push("/");
+  };
 
   return (
     <div className="flex h-full w-[280px] flex-col border-r bg-background py-4">
@@ -94,7 +97,12 @@ export default function Sidebar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-foreground text-background font-bold">
           J
         </div>
-        <h1 className="text-xl font-medium tracking-tight">Juristo</h1>
+        <button
+          className="text-xl font-medium tracking-tight bg-transparent text-black shadow-none"
+          onClick={handleclick}
+        >
+          Juristo
+        </button>
       </div>
 
       <div className="flex-1 space-y-1 px-2">
