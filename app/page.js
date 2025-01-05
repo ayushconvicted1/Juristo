@@ -1,9 +1,19 @@
-import Carousel from "@/components/Carousal";
+"use client";
+import { useState } from "react";
+import Sidebar from "@/components/Sidebar";
 import ChatBot from "@/components/ChatBot";
 import ChatList from "@/components/ChatList";
-import Sidebar from "@/components/Sidebar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
+  const [currentTab, setCurrentTab] = useState("chat");
+  const [showFeatures, setShowFeatures] = useState(true);
+
+  const switchTab = (tab) => {
+    setCurrentTab(tab);
+  };
+
   return (
     <div className="flex gap-4 justify-center items-start h-screen">
       {/* Sidebar */}
@@ -19,9 +29,6 @@ export default function Home() {
       </div>
 
       {/* Chat List */}
-      <div className="flex-none w-1/5 h-full overflow-y-auto">
-        <ChatList />
-      </div>
     </div>
   );
 }

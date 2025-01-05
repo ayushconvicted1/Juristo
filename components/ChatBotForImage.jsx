@@ -95,8 +95,8 @@ const ChatBoxForDocs = () => {
       ]);
       setInput("");
       const response = await fetch(
-        // "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
-        "http://localhost:5000/api/image-chat/chat",
+        "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
+        // "http://localhost:5000/api/image-chat/chat",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

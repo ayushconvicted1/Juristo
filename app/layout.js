@@ -2,6 +2,7 @@ import { MyProvider } from "@/context/MyContext";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/Navbar";
+import { ThemeProvider } from "next-themes";
 
 export const metadata = {
   title: "J U R I S T O",
@@ -14,8 +15,10 @@ export default function RootLayout({ children }) {
       <body>
         <MyProvider>
           {/* <Navbar/> */}
-          <Toaster />
-          {children}
+          <ThemeProvider attribute="class">
+            <Toaster />
+            {children}
+          </ThemeProvider>
         </MyProvider>
       </body>
     </html>
