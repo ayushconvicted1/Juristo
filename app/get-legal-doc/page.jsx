@@ -199,6 +199,7 @@ const ChatBot = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestPayload),
+          mode: "no-cors",
         }
       );
 
