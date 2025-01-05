@@ -179,43 +179,43 @@ const ChatBot = () => {
       const requestPayload = {
         userId: user.userId,
         answers: Array.isArray(answersToGenerate) ? answersToGenerate : [],
-        country: user.country ? user.country.label : null,
+        country: user.country?.label || null,
         userInput: userInput.trim(),
       };
 
-      console.log("Request payload:", requestPayload);
-
       if (!requestPayload.country) {
-        console.error("Country is missing");
-        toast.error("Country is required.");
+        console.error("Country is missing in payload");
+        toast.error("Country is required to generate the document.");
         return;
       }
 
-      console.log("Sending request to backend");
+      console.log("Sending request to backend with payload:", requestPayload);
+
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/legaldocs/generate",
-        // "http://localhost:5000/api/legaldocs/generate",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestPayload),
-          mode: "no-cors",
         }
       );
 
-      console.log("Response status:", response.status);
+      console.log("Response received with status:", response.status);
 
       if (!response.ok) {
         const errorDetails = await response.json();
         console.error("Backend Error:", errorDetails);
-        throw new Error(errorDetails.error || "Failed to generate document");
+        toast.error(errorDetails.error || "Failed to generate document.");
+        return;
       }
 
       const data = await response.json();
-      console.log("Received data from backend:", Object.keys(data));
+      console.log("Received response data:", data);
 
+      // Reset questions
       setQuestions([]);
 
+      // Process PDF
       if (data.pdf) {
         console.log("Creating PDF blob");
         const pdfBlob = new Blob(
@@ -226,34 +226,37 @@ const ChatBot = () => {
         console.log("PDF URL created:", pdfUrl);
         setPdfUrl(pdfUrl);
 
-        // Trigger automatic download
-        console.log("Triggering automatic download");
+        // Trigger download
         const link = document.createElement("a");
         link.href = pdfUrl;
         link.download = "legal_document.pdf";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        console.log("Download triggered");
+        console.log("PDF download triggered");
       } else {
-        console.error("PDF data not found in the response");
-        toast.error("PDF data not found in the response");
+        console.error("PDF data missing in response");
+        toast.error("PDF data not found in the response.");
       }
 
+      // Process DOCX
       if (data.docx) {
         console.log("Creating DOCX blob");
-        const docxUrl = URL.createObjectURL(
-          new Blob([Uint8Array.from(atob(data.docx), (c) => c.charCodeAt(0))], {
+        const docxBlob = new Blob(
+          [Uint8Array.from(atob(data.docx), (c) => c.charCodeAt(0))],
+          {
             type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          })
+          }
         );
+        const docxUrl = URL.createObjectURL(docxBlob);
         console.log("DOCX URL created:", docxUrl);
         setDocxUrl(docxUrl);
       } else {
-        console.error("DOCX data not found in the response");
-        toast.error("DOCX data not found in the response");
+        console.error("DOCX data missing in response");
+        toast.error("DOCX data not found in the response.");
       }
 
+      // Update messages
       setMessages((prev) => [
         ...prev,
         {
@@ -265,10 +268,10 @@ const ChatBot = () => {
         },
       ]);
 
-      console.log("Document generation complete");
       toast.success("Legal document generated successfully!");
+      console.log("Document generation process completed successfully");
     } catch (error) {
-      console.error("Error generating document:", error);
+      console.error("Error during document generation:", error);
       toast.error(`Unable to generate document: ${error.message}`);
     } finally {
       setLoading(false);
