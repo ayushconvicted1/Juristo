@@ -12,6 +12,7 @@ import {
   MessageSquare,
   HelpCircle,
   Sun,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { MyContext } from "@/context/MyContext";
@@ -29,6 +30,20 @@ import Image from "next/image";
 import cn from "classnames";
 import { useTheme } from "next-themes";
 import ChatList from "./ChatList";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const countries = [
+  {
+    name: "India",
+    flag: "https://th.bing.com/th?id=OIP.RDVZ5zQLg2qa3FLO_4vqoAHaE5&w=307&h=203&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2",
+  },
+  // Add more countries as needed
+];
 
 export default function ChatBox() {
   const { theme, setTheme } = useTheme();
@@ -41,15 +56,10 @@ export default function ChatBox() {
   const [showFeatures, setShowFeatures] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
 
-  const {
-    user,
-    selectedChat,
-    selectedLanguage,
-    selectedCountry,
-    fetchChats,
-    setSelectedChat,
-  } = useContext(MyContext);
+  const { user, selectedChat, selectedLanguage, fetchChats, setSelectedChat } =
+    useContext(MyContext);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -62,6 +72,7 @@ export default function ChatBox() {
       document.body.style.overflow = "auto";
     };
   }, [user, router]);
+
   useEffect(() => {
     console.log("Current theme:", theme);
   }, [theme]);
@@ -98,7 +109,7 @@ export default function ChatBox() {
       message: input,
       newChat: !selectedChat,
       chatId: selectedChat?.chatId,
-      country: selectedCountry.label || user?.country.label,
+      country: selectedCountry.name,
       language: selectedLanguage.label || user?.language.label,
     };
 
@@ -162,7 +173,7 @@ export default function ChatBox() {
       message: userQuery,
       newChat: false,
       chatId: selectedChat?.chatId,
-      country: selectedCountry.label || user?.country.label,
+      country: selectedCountry.name,
       language: selectedLanguage.label || user?.language.label,
     };
 
@@ -225,24 +236,48 @@ export default function ChatBox() {
 
   return (
     <div className="flex h-screen">
-      {/* Left Sidebar */}
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         <div className="sticky top-0 bg-white border-b p-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div /> {/* Empty div for spacing */}
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 px-2 py-2 rounded-full">
-                <span className="text-sm font-medium">Country: India</span>
-                <Image
-                  src="https://th.bing.com/th?id=OIP.RDVZ5zQLg2qa3FLO_4vqoAHaE5&w=307&h=203&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2"
-                  alt="India flag"
-                  width={20}
-                  height={15}
-                  className="rounded-sm"
-                />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <Image
+                      src={selectedCountry.flag}
+                      alt={`${selectedCountry.name} flag`}
+                      width={20}
+                      height={15}
+                      className="rounded-sm"
+                    />
+                    <span className="text-sm font-medium">
+                      {selectedCountry.name}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {countries.map((country) => (
+                    <DropdownMenuItem
+                      key={country.name}
+                      onSelect={() => setSelectedCountry(country)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src={country.flag}
+                          alt={`${country.name} flag`}
+                          width={20}
+                          height={15}
+                          className="rounded-sm"
+                        />
+                        <span>{country.name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 variant="ghost"
                 size="icon"

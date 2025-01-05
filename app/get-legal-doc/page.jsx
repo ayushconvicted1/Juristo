@@ -175,7 +175,7 @@ const ChatBot = () => {
       setLoading(true);
       console.log("Starting document generation");
       toast.loading("Generating your legal document...");
-      console.log("User:", user.userId);
+
       const requestPayload = {
         userId: user.userId,
         answers: Array.isArray(answersToGenerate) ? answersToGenerate : [],
@@ -199,7 +199,6 @@ const ChatBot = () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(requestPayload),
-          mode: "no-cors",
         }
       );
 
