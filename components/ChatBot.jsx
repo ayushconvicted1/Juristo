@@ -278,7 +278,7 @@ export default function ChatBox() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button
+              {/* <Button
                 variant="ghost"
                 size="icon"
                 className="rounded-full"
@@ -289,7 +289,7 @@ export default function ChatBox() {
                 ) : (
                   <Sun className="h-5 w-5" />
                 )}
-              </Button>
+              </Button> */}
             </div>
             <div /> {/* Empty div for spacing */}
           </div>
