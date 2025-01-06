@@ -46,7 +46,10 @@ export async function POST(req) {
       );
     }
 
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const openai = new OpenAI({
+      apiKey:
+        "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",
+    });
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
