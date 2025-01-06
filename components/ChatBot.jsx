@@ -36,15 +36,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import countries from "world-countries";
 
-const countries = [
-  {
-    name: "India",
-    flag: "https://th.bing.com/th?id=OIP.RDVZ5zQLg2qa3FLO_4vqoAHaE5&w=307&h=203&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2",
-  },
-  // Add more countries as needed
-];
-
+const countryOptions = countries.map((country) => ({
+  name: country.name.common,
+  flag: `https://flagcdn.com/w40/${country.cca2.toLowerCase()}.png`,
+}));
+const defaultCountry =
+  countryOptions.find((country) => country.name === "India") ||
+  countryOptions[0];
 export default function ChatBox() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function ChatBox() {
   const [showFeatures, setShowFeatures] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
 
   const { user, selectedChat, selectedLanguage, fetchChats, setSelectedChat } =
     useContext(MyContext);
@@ -238,13 +238,14 @@ export default function ChatBox() {
     <div className="flex h-screen">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="sticky top-0 bg-white border-b p-4">
+        <div className="sticky top-0  border-b p-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div /> {/* Empty div for spacing */}
             <div className="flex items-center gap-4">
               <DropdownMenu>
+                {/* Trigger Button */}
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <button className="flex items-center gap-2 px-4 py-2 border rounded-md  shadow-sm ">
                     <Image
                       src={selectedCountry.flag}
                       alt={`${selectedCountry.name} flag`}
@@ -256,24 +257,25 @@ export default function ChatBox() {
                       {selectedCountry.name}
                     </span>
                     <ChevronDown className="h-4 w-4" />
-                  </Button>
+                  </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {countries.map((country) => (
+
+                {/* Dropdown Content */}
+                <DropdownMenuContent className="w-64 max-h-60 overflow-y-auto  border rounded-md shadow-lg">
+                  {countryOptions.map((country) => (
                     <DropdownMenuItem
                       key={country.name}
                       onSelect={() => setSelectedCountry(country)}
+                      className="flex items-center gap-2 px-4 py-2  cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <Image
-                          src={country.flag}
-                          alt={`${country.name} flag`}
-                          width={20}
-                          height={15}
-                          className="rounded-sm"
-                        />
-                        <span>{country.name}</span>
-                      </div>
+                      <Image
+                        src={country.flag}
+                        alt={`${country.name} flag`}
+                        width={20}
+                        height={15}
+                        className="rounded-sm"
+                      />
+                      <span>{country.name}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -438,16 +440,16 @@ export default function ChatBox() {
         </ScrollArea>
 
         {currentTab === "chat" && (
-          <div className="p-4 border-t bg-white">
+          <div className="p-4 border-t">
             <div className="max-w-4xl mx-auto flex gap-4">
-              <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+              <div className="flex-1 flex items-center gap-2  rounded-lg border p-2">
                 <Input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Ask questions for your legal help"
-                  className="flex-1 border-0 focus-visible:ring-0 bg-white focus-visible:ring-offset-0"
+                  className="flex-1 border-0 focus-visible:ring-0  focus-visible:ring-offset-0"
                 />
                 <Button variant="ghost" size="icon">
                   <Mic className="h-5 w-5 text-gray-400" />
@@ -466,7 +468,7 @@ export default function ChatBox() {
       </div>
 
       {/* Right Sidebar - Chat List */}
-      <div className="w-80 border-l bg-white">
+      <div className="w-80 border-l">
         <ChatList currentTab={currentTab} />
       </div>
     </div>

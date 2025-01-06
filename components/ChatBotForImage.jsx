@@ -368,16 +368,16 @@ const ChatBoxForDocs = () => {
 
       {/* Input Area - Only shown after file upload */}
       {imgSelected && (
-        <div className="sticky bottom-0 bg-gray-50 p-4">
+        <div className="sticky bottom-0 p-4">
           <div className="max-w-4xl mx-auto flex gap-4">
-            <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+            <div className="flex-1 flex items-center gap-2  rounded-lg border p-2">
               <Input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder="Ask questions about your document..."
-                className="flex-1 border-0 focus-visible:ring-0 bg-white focus-visible:ring-offset-0"
+                className="flex-1 border-0 focus-visible:ring-0  focus-visible:ring-offset-0"
               />
               <Button variant="ghost" size="icon">
                 <Mic className="h-5 w-5 text-gray-400" />

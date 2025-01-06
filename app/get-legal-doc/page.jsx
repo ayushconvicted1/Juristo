@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { HashLoader } from "react-spinners";
+import { Buffer } from "buffer";
 
 import cn from "classnames";
 
@@ -191,15 +192,11 @@ const ChatBot = () => {
 
       console.log("Sending request to backend with payload:", requestPayload);
 
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/legaldocs/generate",
-        // "http://localhost:5000/api/legaldocs/generate",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestPayload),
-        }
-      );
+      const response = await fetch("/api/legaldocs/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestPayload),
+      });
 
       console.log("Response received with status:", response.status);
 
@@ -219,10 +216,9 @@ const ChatBot = () => {
       // Process PDF
       if (data.pdf) {
         console.log("Creating PDF blob");
-        const pdfBlob = new Blob(
-          [Uint8Array.from(atob(data.pdf), (c) => c.charCodeAt(0))],
-          { type: "application/pdf" }
-        );
+        const pdfBlob = new Blob([Buffer.from(data.pdf, "base64")], {
+          type: "application/pdf",
+        });
         const pdfUrl = URL.createObjectURL(pdfBlob);
         console.log("PDF URL created:", pdfUrl);
         setPdfUrl(pdfUrl);
@@ -243,12 +239,9 @@ const ChatBot = () => {
       // Process DOCX
       if (data.docx) {
         console.log("Creating DOCX blob");
-        const docxBlob = new Blob(
-          [Uint8Array.from(atob(data.docx), (c) => c.charCodeAt(0))],
-          {
-            type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          }
-        );
+        const docxBlob = new Blob([Buffer.from(data.docx, "base64")], {
+          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
         const docxUrl = URL.createObjectURL(docxBlob);
         console.log("DOCX URL created:", docxUrl);
         setDocxUrl(docxUrl);
@@ -487,9 +480,9 @@ const ChatBot = () => {
         </div>
       </ScrollArea>
 
-      <div className="sticky bottom-0 bg-gray-50 p-4">
+      <div className="sticky bottom-0 p-4">
         <div className="max-w-4xl mx-auto flex gap-4">
-          <div className="flex-1 flex items-center gap-2 bg-white rounded-lg border p-2">
+          <div className="flex-1 flex items-center gap-2  rounded-lg border p-2">
             <Input
               type="text"
               value={questions.length > 0 ? currentAnswer : userInput}
@@ -507,7 +500,7 @@ const ChatBot = () => {
                   ? "Type your answer..."
                   : "Describe the legal document you need..."
               }
-              className="flex-1 border-0 focus-visible:ring-0 bg-white focus-visible:ring-offset-0"
+              className="flex-1 border-0 focus-visible:ring-0  focus-visible:ring-offset-0"
             />
             <Button variant="ghost" size="icon">
               <Mic className="h-5 w-5 text-gray-400" />

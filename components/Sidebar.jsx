@@ -98,7 +98,7 @@ export default function Sidebar() {
           J
         </div>
         <button
-          className="text-xl font-medium tracking-tight bg-transparent text-black shadow-none"
+          className="text-xl font-medium tracking-tight bg-transparent shadow-none"
           onClick={handleclick}
         >
           Juristo
