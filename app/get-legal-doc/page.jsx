@@ -25,13 +25,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
-import { toast } from "react-hot-toast";
+import { useToast } from "@/hooks/use-toast";
 import { HashLoader } from "react-spinners";
 import { Buffer } from "buffer";
 
 import cn from "classnames";
 
 const ChatBot = () => {
+  const { toast } = useToast();
   const { user } = useContext(MyContext);
   const chatEndRef = useRef(null);
   const [questions, setQuestions] = useState([]);
@@ -53,10 +54,14 @@ const ChatBot = () => {
       console.warn(
         "User is not initialized or missing user ID. Ensure proper context setup."
       );
-      toast.error("User information is incomplete. Please log in again.");
+      toast({
+        title: "User Information Incomplete",
+        description: "Please log in again.",
+        variant: "destructive",
+      });
       // You might want to redirect to login page here
     }
-  }, [user]);
+  }, [user, toast]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -66,14 +71,21 @@ const ChatBot = () => {
 
   const fetchQuestions = async () => {
     if (!user || !user.country || !user.userId) {
-      toast.error("User information is missing. Please log in.");
+      toast({
+        title: "User Information Missing",
+        description: "Please log in to continue.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!userInput.trim()) {
-      toast.error(
-        "Please provide a description of the legal document you need."
-      );
+      toast({
+        title: "Input Required",
+        description:
+          "Please provide a description of the legal document you need.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -92,31 +104,35 @@ const ChatBot = () => {
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setQuestions(data.questions || []);
-        if (data.questions && data.questions.length > 0) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content:
-                "I've analyzed your request. Please answer the following questions to help me generate the appropriate legal document.",
-              timestamp: new Date(),
-            },
-            {
-              role: "assistant",
-              content: data.questions[0],
-              timestamp: new Date(),
-            },
-          ]);
-        }
-      } else {
-        toast.error("Failed to fetch questions.");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setQuestions(data.questions || []);
+      if (data.questions && data.questions.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content:
+              "I've analyzed your request. Please answer the following questions to help me generate the appropriate legal document.",
+            timestamp: new Date(),
+          },
+          {
+            role: "assistant",
+            content: data.questions[0],
+            timestamp: new Date(),
+          },
+        ]);
       }
     } catch (error) {
       console.error("Error fetching questions:", error);
-      toast.error("Unable to fetch questions. Please try again.");
+      toast({
+        title: "Error",
+        description: "Unable to fetch questions. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -124,7 +140,11 @@ const ChatBot = () => {
 
   const handleAnswerSubmit = () => {
     if (!currentAnswer.trim()) {
-      toast.error("Please provide an answer.");
+      toast({
+        title: "Answer Required",
+        description: "Please provide an answer.",
+        variant: "destructive",
+      });
       return;
     }
     const newAnswers = [
@@ -159,15 +179,22 @@ const ChatBot = () => {
   const handleGenerate = async (answersToGenerate) => {
     if (!user || !user.userId || !user.country) {
       console.error("User information incomplete:", { user });
-      toast.error("User information is incomplete. Please log in.");
+      toast({
+        title: "User Information Incomplete",
+        description: "Please log in to continue.",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!userInput.trim()) {
       console.error("User input is missing");
-      toast.error(
-        "Please provide a description of the legal document you need."
-      );
+      toast({
+        title: "Input Required",
+        description:
+          "Please provide a description of the legal document you need.",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -175,7 +202,10 @@ const ChatBot = () => {
       setPdfGenerating(true);
       setLoading(true);
       console.log("Starting document generation");
-      toast.loading("Generating your legal document...");
+      toast({
+        title: "Generating Document",
+        description: "Please wait while we generate your legal document...",
+      });
 
       const requestPayload = {
         userId: user.userId,
@@ -186,8 +216,7 @@ const ChatBot = () => {
 
       if (!requestPayload.country) {
         console.error("Country is missing in payload");
-        toast.error("Country is required to generate the document.");
-        return;
+        throw new Error("Country is required to generate the document.");
       }
 
       console.log("Sending request to backend with payload:", requestPayload);
@@ -201,10 +230,8 @@ const ChatBot = () => {
       console.log("Response received with status:", response.status);
 
       if (!response.ok) {
-        const errorDetails = await response.json();
-        console.error("Backend Error:", errorDetails);
-        toast.error(errorDetails.error || "Failed to generate document.");
-        return;
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate document.");
       }
 
       const data = await response.json();
@@ -233,7 +260,7 @@ const ChatBot = () => {
         console.log("PDF download triggered");
       } else {
         console.error("PDF data missing in response");
-        toast.error("PDF data not found in the response.");
+        throw new Error("PDF data not found in the response.");
       }
 
       // Process DOCX
@@ -247,7 +274,7 @@ const ChatBot = () => {
         setDocxUrl(docxUrl);
       } else {
         console.error("DOCX data missing in response");
-        toast.error("DOCX data not found in the response.");
+        throw new Error("DOCX data not found in the response.");
       }
 
       // Update messages
@@ -262,24 +289,34 @@ const ChatBot = () => {
         },
       ]);
 
-      toast.success("Legal document generated successfully!");
+      toast({
+        title: "Success",
+        description: "Legal document generated successfully!",
+        variant: "success",
+      });
       console.log("Document generation process completed successfully");
     } catch (error) {
       console.error("Error during document generation:", error);
-      toast.error(`Unable to generate document: ${error.message}`);
+      toast({
+        title: "Error",
+        description: `Unable to generate document: ${error.message}`,
+        variant: "success",
+      });
     } finally {
       setLoading(false);
       setPdfGenerating(false);
       console.log("Generation process finished");
-      toast.dismiss();
     }
   };
 
   const handleSend = async () => {
     if (!userInput.trim()) {
-      toast.error(
-        "Please provide a description of the legal document you need."
-      );
+      toast({
+        title: "Input Required",
+        description:
+          "Please provide a description of the legal document you need.",
+        variant: "destructive",
+      });
       return;
     }
     setLoading(true);
@@ -292,20 +329,8 @@ const ChatBot = () => {
     await fetchQuestions();
   };
 
-  const handleCopy = (content) => {
-    navigator.clipboard
-      .writeText(content)
-      .then(() => toast.success("Copied to clipboard"))
-      .catch(() => toast.error("Failed to copy"));
-  };
-
-  const handleGenerateResponse = async (content) => {
-    toast.success("Regenerating response...");
-    // Implement regenerate logic here
-  };
-
   const handleAudioToggle = () => {
-    toast.success("Audio feature coming soon!");
+    // Implement text-to-speech feature here
   };
 
   return (
@@ -432,7 +457,11 @@ const ChatBot = () => {
                           asChild
                           onClick={() => {
                             console.log("Manual PDF download clicked");
-                            toast.success("Manual PDF download started");
+                            toast({
+                              title: "Download Started",
+                              description: "Manual PDF download started",
+                              variant: "success",
+                            });
                           }}
                         >
                           <a href={pdfUrl} download="legal_document.pdf">
@@ -445,7 +474,11 @@ const ChatBot = () => {
                             asChild
                             onClick={() => {
                               console.log("DOCX download clicked");
-                              toast.success("DOCX download started");
+                              toast({
+                                title: "Download Started",
+                                description: "DOCX download started",
+                                variant: "success",
+                              });
                             }}
                           >
                             <a href={docxUrl} download="legal_document.docx">
