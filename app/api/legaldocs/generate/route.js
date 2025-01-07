@@ -33,8 +33,18 @@ export async function POST(req) {
     // Connect to the database
     await connectToDatabase();
 
-    const { userId, answers, userInput, country } = await req.json();
+    let requestData;
+    try {
+      requestData = await req.json();
+    } catch (error) {
+      console.error("Invalid JSON in request body:", error);
+      return NextResponse.json(
+        { error: "Invalid JSON in request body." },
+        { status: 400 }
+      );
+    }
 
+    const { userId, answers, userInput, country } = requestData;
     if (!userId || !answers || !userInput || !country) {
       return NextResponse.json(
         { error: "User ID, answers, user input, and country are required." },
@@ -47,12 +57,9 @@ export async function POST(req) {
       timeout: 600000,
     });
 
-    // Prepare messages for OpenAI
-    const systemMessage = `You are a professional legal assistant with expertise in drafting various legal documents. Your task is to create thorough, clear, and sensible legal documents for any type of agreement or legal form (such as contracts, policies, terms of service, non-disclosure agreements, etc.). The document must be comprehensive, properly structured, and legally sound, tailored to the laws and requirements of the user's country: ${country}. Each document should be at least 3-5 pages long, with logically divided sections, and cover all essential legal provisions.`;
+    const systemMessage = `You are a professional legal assistant... tailored for ${country}.`;
 
-    const userMessage = `Based on the following user input and answers, generate a detailed legal document tailored for ${country}: 
-                  User Input: ${userInput}
-                  Answers: ${JSON.stringify(answers)}`;
+    const userMessage = `Based on the following user input and answers...`;
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
@@ -63,13 +70,31 @@ export async function POST(req) {
       max_tokens: 3000,
     });
 
+    if (
+      !aiResponse ||
+      !aiResponse.choices ||
+      !aiResponse.choices[0] ||
+      !aiResponse.choices[0].message ||
+      !aiResponse.choices[0].message.content
+    ) {
+      return NextResponse.json(
+        { error: "Failed to generate content from OpenAI." },
+        { status: 500 }
+      );
+    }
+
     const legalText = aiResponse.choices[0].message.content.trim();
+    if (!legalText || legalText.length < 10) {
+      return NextResponse.json(
+        { error: "Generated document content is too short or invalid." },
+        { status: 400 }
+      );
+    }
+
     const pdfBuffer = await generatePDF(legalText);
 
-    // Upload PDF to Cloudinary
     const cloudinaryUrl = await uploadToCloudinary(pdfBuffer);
 
-    // Save document to the database
     const document = new Legaldocs({
       userId,
       userInput,
