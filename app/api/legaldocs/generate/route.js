@@ -58,11 +58,8 @@ export async function POST(req) {
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 3000,
+      messages: [{ role: "user", content: userMessage }],
+      max_tokens: 5000,
     });
 
     const legalText = aiResponse?.choices?.[0]?.message?.content?.trim();
