@@ -11,9 +11,7 @@ dotenv.config();
 
 // Database connection function
 async function connectToDatabase() {
-  if (mongoose.connection.readyState >= 1) {
-    return;
-  }
+  if (mongoose.connection.readyState >= 1) return;
 
   try {
     await mongoose.connect(process.env.MONGO_URI, {
@@ -33,18 +31,13 @@ export async function POST(req) {
     // Connect to the database
     await connectToDatabase();
 
-    let requestData;
-    try {
-      requestData = await req.json();
-    } catch (error) {
+    const requestData = await req.json().catch((error) => {
       console.error("Invalid JSON in request body:", error);
-      return NextResponse.json(
-        { error: "Invalid JSON in request body." },
-        { status: 400 }
-      );
-    }
+      throw new Error("Invalid JSON in request body");
+    });
 
     const { userId, answers, userInput, country } = requestData;
+
     if (!userId || !answers || !userInput || !country) {
       return NextResponse.json(
         { error: "User ID, answers, user input, and country are required." },
@@ -58,8 +51,10 @@ export async function POST(req) {
     });
 
     const systemMessage = `You are a professional legal assistant... tailored for ${country}.`;
-
-    const userMessage = `Based on the following user input and answers...`;
+    const userMessage = `Based on the following user input and answers:
+    
+    User Input: ${userInput}
+    Answers: ${JSON.stringify(answers)}`;
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
@@ -70,29 +65,16 @@ export async function POST(req) {
       max_tokens: 3000,
     });
 
-    if (
-      !aiResponse ||
-      !aiResponse.choices ||
-      !aiResponse.choices[0] ||
-      !aiResponse.choices[0].message ||
-      !aiResponse.choices[0].message.content
-    ) {
-      return NextResponse.json(
-        { error: "Failed to generate content from OpenAI." },
-        { status: 500 }
-      );
-    }
-
-    const legalText = aiResponse.choices[0].message.content.trim();
+    const legalText = aiResponse?.choices?.[0]?.message?.content?.trim();
     if (!legalText || legalText.length < 10) {
-      return NextResponse.json(
-        { error: "Generated document content is too short or invalid." },
-        { status: 400 }
-      );
+      throw new Error("Generated document content is too short or invalid.");
     }
 
-    const pdfBuffer = await generatePDF(legalText);
+    // Combine userInput, answers, and legalText for PDF generation
+    const pdfContent = `
+${legalText}`;
 
+    const pdfBuffer = await generatePDF(pdfContent);
     const cloudinaryUrl = await uploadToCloudinary(pdfBuffer);
 
     const document = new Legaldocs({
@@ -102,43 +84,34 @@ export async function POST(req) {
       country,
       pdfUrl: cloudinaryUrl,
     });
+
     await document.save();
 
     return NextResponse.json({ pdfUrl: cloudinaryUrl });
   } catch (error) {
     console.error("Error in API route:", error);
 
+    const errorResponse = {
+      error: "An unexpected error occurred.",
+      details: error.message,
+    };
+
     if (error instanceof mongoose.Error) {
-      return NextResponse.json(
-        {
-          error: "Database error. Please try again later.",
-          details: error.message,
-        },
-        { status: 503 }
-      );
+      errorResponse.error = "Database error. Please try again later.";
+      return NextResponse.json(errorResponse, { status: 503 });
     }
 
     if (error instanceof OpenAI.APIError) {
       if (error.code === "context_length_exceeded") {
-        return NextResponse.json(
-          {
-            error:
-              "The input is too long. Please provide a shorter description or fewer answers.",
-            details: error.message,
-          },
-          { status: 400 }
-        );
+        errorResponse.error =
+          "The input is too long. Please provide a shorter description or fewer answers.";
+        return NextResponse.json(errorResponse, { status: 400 });
       }
-      return NextResponse.json(
-        { error: "Error generating document content.", details: error.message },
-        { status: 500 }
-      );
+      errorResponse.error = "Error generating document content.";
+      return NextResponse.json(errorResponse, { status: 500 });
     }
 
-    return NextResponse.json(
-      { error: "An unexpected error occurred.", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json(errorResponse, { status: 500 });
   }
 }
 
@@ -151,7 +124,7 @@ const generatePDF = async (text) => {
   const textLines = text.split("\n");
   let y = 750;
 
-  textLines.forEach((line) => {
+  for (const line of textLines) {
     if (y < 50) {
       const newPage = pdfDoc.addPage([600, 800]);
       y = 750;
@@ -164,7 +137,7 @@ const generatePDF = async (text) => {
       color: rgb(0, 0, 0),
     });
     y -= 20;
-  });
+  }
 
   return Buffer.from(await pdfDoc.save());
 };

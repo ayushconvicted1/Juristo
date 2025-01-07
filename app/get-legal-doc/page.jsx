@@ -214,11 +214,14 @@ const ChatBot = () => {
         userInput: userInput.trim(),
       };
 
+      console.log("Request Payload:", requestPayload);
+
       if (!requestPayload.country) {
         console.error("Country is missing in payload");
         throw new Error("Country is required to generate the document.");
       }
 
+      // Send request to backend
       const response = await fetch("/api/legaldocs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -227,15 +230,16 @@ const ChatBot = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Backend error response:", errorData);
         throw new Error(errorData.error || "Failed to generate document.");
       }
 
       const data = await response.json();
-
-      console.log("Received response data:", data);
+      console.log("Response from backend:", data);
 
       if (data.pdfUrl) {
         setPdfUrl(data.pdfUrl);
+
         setMessages((prev) => [
           ...prev,
           {
@@ -247,14 +251,15 @@ const ChatBot = () => {
             hasPdf: true,
           },
         ]);
+
         toast({
           title: "Success",
           description: "Your legal document has been generated successfully.",
           variant: "success",
         });
       } else {
-        console.error("Document link missing in response");
-        throw new Error("Document link not found in the response.");
+        console.error("PDF URL missing in the backend response");
+        throw new Error("PDF URL not found in the response.");
       }
     } catch (error) {
       console.error("Error during document generation:", error);
