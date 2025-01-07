@@ -17,7 +17,7 @@ async function connectToDatabase() {
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 50000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 5000,
     });
     console.log("Connected to MongoDB");
   } catch (error) {
@@ -28,12 +28,14 @@ async function connectToDatabase() {
 
 export async function POST(req) {
   try {
-    // Connect to the database
     await connectToDatabase();
 
     const requestData = await req.json().catch((error) => {
       console.error("Invalid JSON in request body:", error);
-      throw new Error("Invalid JSON in request body");
+      return NextResponse.json(
+        { error: "Invalid JSON in request body." },
+        { status: 400 }
+      );
     });
 
     const { userId, answers, userInput, country } = requestData;
@@ -67,10 +69,7 @@ export async function POST(req) {
       throw new Error("Generated document content is too short or invalid.");
     }
 
-    // Combine userInput, answers, and legalText for PDF generation
-    const pdfContent = `
-${legalText}`;
-
+    const pdfContent = `${legalText}`;
     const pdfBuffer = await generatePDF(pdfContent);
     const cloudinaryUrl = await uploadToCloudinary(pdfBuffer);
 
@@ -88,31 +87,23 @@ ${legalText}`;
   } catch (error) {
     console.error("Error in API route:", error);
 
-    const errorResponse = {
-      error: "An unexpected error occurred.",
-      details: error.message,
-    };
+    const isMongooseError = error instanceof mongoose.Error;
+    const isAIError = error instanceof OpenAI.APIError;
 
-    if (error instanceof mongoose.Error) {
-      errorResponse.error = "Database error. Please try again later.";
-      return NextResponse.json(errorResponse, { status: 503 });
-    }
-
-    if (error instanceof OpenAI.APIError) {
-      if (error.code === "context_length_exceeded") {
-        errorResponse.error =
-          "The input is too long. Please provide a shorter description or fewer answers.";
-        return NextResponse.json(errorResponse, { status: 400 });
-      }
-      errorResponse.error = "Error generating document content.";
-      return NextResponse.json(errorResponse, { status: 500 });
-    }
-
-    return NextResponse.json(errorResponse, { status: 500 });
+    return NextResponse.json(
+      {
+        error: isMongooseError
+          ? "Database error. Please try again later."
+          : isAIError
+          ? "Error generating document content."
+          : "An unexpected error occurred.",
+        details: error.message,
+      },
+      { status: isMongooseError ? 503 : isAIError ? 500 : 500 }
+    );
   }
 }
 
-// Helper function to generate a PDF document
 const generatePDF = async (text) => {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([600, 800]);
@@ -139,7 +130,6 @@ const generatePDF = async (text) => {
   return Buffer.from(await pdfDoc.save());
 };
 
-// Helper function to upload PDF to Cloudinary
 const uploadToCloudinary = async (pdfBuffer) => {
   const cloudinaryUrl = "https://api.cloudinary.com/v1_1/dc9msi1wn/auto/upload";
   const formData = new FormData();
