@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { Document, Packer, Paragraph, TextRun, AlignmentType } from "docx";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import OpenAI from "openai";
-import mammoth from "mammoth";
 import mongoose from "mongoose";
 import { Legaldocs } from "@/lib/db/models/Legaldocs";
 import dotenv from "dotenv";
+import axios from "axios";
+import FormData from "form-data";
 
 dotenv.config();
 
@@ -44,27 +44,15 @@ export async function POST(req) {
 
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
-      timeout: 60000,
+      timeout: 600000,
     });
 
-    // Prepare the messages for the API call
-    const systemMessage = `You are a professional legal assistant with expertise in drafting various legal documents. Your task is to create thorough, clear, and sensible legal documents for any type of agreement or legal form (such as contracts, policies, terms of service, non-disclosure agreements, etc.). The document must be comprehensive, properly structured, and legally sound, tailored to the laws and requirements of the user's country that is ${country}. Each document should be at least 3-5 pages long, with logically divided sections, and cover all essential legal provisions.`;
+    // Prepare messages for OpenAI
+    const systemMessage = `You are a professional legal assistant with expertise in drafting various legal documents. Your task is to create thorough, clear, and sensible legal documents for any type of agreement or legal form (such as contracts, policies, terms of service, non-disclosure agreements, etc.). The document must be comprehensive, properly structured, and legally sound, tailored to the laws and requirements of the user's country: ${country}. Each document should be at least 3-5 pages long, with logically divided sections, and cover all essential legal provisions.`;
 
     const userMessage = `Based on the following user input and answers, generate a detailed legal document tailored for ${country}: 
                   User Input: ${userInput}
                   Answers: ${JSON.stringify(answers)}`;
-
-    // Function to estimate token count (this is a rough estimate)
-    const estimateTokenCount = (text) => {
-      return Math.ceil(text.split(/\s+/).length * 1.3);
-    };
-
-    const systemTokens = estimateTokenCount(systemMessage);
-    const userTokens = estimateTokenCount(userMessage);
-    const totalInputTokens = systemTokens + userTokens;
-
-    // Adjust max_tokens based on input token count
-    const maxOutputTokens = Math.min(4096 - totalInputTokens, 4000);
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
@@ -72,22 +60,26 @@ export async function POST(req) {
         { role: "system", content: systemMessage },
         { role: "user", content: userMessage },
       ],
-      max_tokens: maxOutputTokens,
+      max_tokens: 3000,
     });
 
     const legalText = aiResponse.choices[0].message.content.trim();
-    const docxBuffer = await generateDocx(legalText);
     const pdfBuffer = await generatePDF(legalText);
-    const previewResult = await mammoth.convertToHtml({ buffer: docxBuffer });
 
-    const document = new Legaldocs({ userId, userInput, answers, country });
-    await document.save({ timeout: 60000 });
+    // Upload PDF to Cloudinary
+    const cloudinaryUrl = await uploadToCloudinary(pdfBuffer);
 
-    return NextResponse.json({
-      preview: previewResult.value,
-      docx: Buffer.from(docxBuffer).toString("base64"),
-      pdf: Buffer.from(pdfBuffer).toString("base64"),
+    // Save document to the database
+    const document = new Legaldocs({
+      userId,
+      userInput,
+      answers,
+      country,
+      pdfUrl: cloudinaryUrl,
     });
+    await document.save();
+
+    return NextResponse.json({ pdfUrl: cloudinaryUrl });
   } catch (error) {
     console.error("Error in API route:", error);
 
@@ -125,14 +117,6 @@ export async function POST(req) {
   }
 }
 
-// Helper function to generate a DOCX document
-const generateDocx = async (text) => {
-  const doc = new Document({
-    sections: [{ children: createFormattedParagraphs(text) }],
-  });
-  return await Packer.toBuffer(doc);
-};
-
 // Helper function to generate a PDF document
 const generatePDF = async (text) => {
   const pdfDoc = await PDFDocument.create();
@@ -160,33 +144,20 @@ const generatePDF = async (text) => {
   return Buffer.from(await pdfDoc.save());
 };
 
-// Helper function to format paragraphs for DOCX
-const createFormattedParagraphs = (text) => {
-  const paragraphs = [];
-  const lines = text.split("\n");
+// Helper function to upload PDF to Cloudinary
+const uploadToCloudinary = async (pdfBuffer) => {
+  const cloudinaryUrl = "https://api.cloudinary.com/v1_1/dc9msi1wn/auto/upload";
+  const formData = new FormData();
+  formData.append("file", pdfBuffer, { filename: "document.pdf" });
+  formData.append("upload_preset", "wecofy");
 
-  lines.forEach((line) => {
-    if (line.trim() === "") {
-      paragraphs.push(new Paragraph({ text: " ", spacing: { after: 200 } }));
-    } else if (line.startsWith("**") && line.endsWith("**")) {
-      paragraphs.push(
-        new Paragraph({
-          text: line.replace(/\*\*/g, ""),
-          bold: true,
-          spacing: { after: 200 },
-          alignment: AlignmentType.LEFT,
-        })
-      );
-    } else {
-      paragraphs.push(
-        new Paragraph({
-          children: [new TextRun(line)],
-          spacing: { after: 100 },
-          alignment: AlignmentType.JUSTIFIED,
-        })
-      );
-    }
-  });
-
-  return paragraphs;
+  try {
+    const response = await axios.post(cloudinaryUrl, formData, {
+      headers: formData.getHeaders(),
+    });
+    return response.data.secure_url;
+  } catch (error) {
+    console.error("Error uploading to Cloudinary:", error);
+    throw new Error("Failed to upload PDF to Cloudinary");
+  }
 };

@@ -59,7 +59,6 @@ const ChatBot = () => {
         description: "Please log in again.",
         variant: "destructive",
       });
-      // You might want to redirect to login page here
     }
   }, [user, toast]);
 
@@ -202,6 +201,7 @@ const ChatBot = () => {
       setPdfGenerating(true);
       setLoading(true);
       console.log("Starting document generation");
+
       toast({
         title: "Generating Document",
         description: "Please wait while we generate your legal document...",
@@ -219,15 +219,11 @@ const ChatBot = () => {
         throw new Error("Country is required to generate the document.");
       }
 
-      console.log("Sending request to backend with payload:", requestPayload);
-
       const response = await fetch("/api/legaldocs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestPayload),
       });
-
-      console.log("Response received with status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -235,77 +231,42 @@ const ChatBot = () => {
       }
 
       const data = await response.json();
+
       console.log("Received response data:", data);
 
-      // Reset questions
-      setQuestions([]);
-
-      // Process PDF
-      if (data.pdf) {
-        console.log("Creating PDF blob");
-        const pdfBlob = new Blob([Buffer.from(data.pdf, "base64")], {
-          type: "application/pdf",
+      if (data.pdfUrl) {
+        setPdfUrl(data.pdfUrl);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content:
+              "Your document has been successfully generated. You can access it below:",
+            timestamp: new Date(),
+            documentLink: data.pdfUrl,
+            hasPdf: true,
+          },
+        ]);
+        toast({
+          title: "Success",
+          description: "Your legal document has been generated successfully.",
+          variant: "success",
         });
-        const pdfUrl = URL.createObjectURL(pdfBlob);
-        console.log("PDF URL created:", pdfUrl);
-        setPdfUrl(pdfUrl);
-
-        // Trigger download
-        const link = document.createElement("a");
-        link.href = pdfUrl;
-        link.download = "legal_document.pdf";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        console.log("PDF download triggered");
       } else {
-        console.error("PDF data missing in response");
-        throw new Error("PDF data not found in the response.");
+        console.error("Document link missing in response");
+        throw new Error("Document link not found in the response.");
       }
-
-      // Process DOCX
-      if (data.docx) {
-        console.log("Creating DOCX blob");
-        const docxBlob = new Blob([Buffer.from(data.docx, "base64")], {
-          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
-        const docxUrl = URL.createObjectURL(docxBlob);
-        console.log("DOCX URL created:", docxUrl);
-        setDocxUrl(docxUrl);
-      } else {
-        console.error("DOCX data missing in response");
-        throw new Error("DOCX data not found in the response.");
-      }
-
-      // Update messages
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "I've generated your legal document. You can preview it below. The PDF download should start automatically.",
-          timestamp: new Date(),
-          hasPdf: true,
-        },
-      ]);
-
-      toast({
-        title: "Success",
-        description: "Legal document generated successfully!",
-        variant: "success",
-      });
-      console.log("Document generation process completed successfully");
     } catch (error) {
       console.error("Error during document generation:", error);
       toast({
         title: "Error",
         description: `Unable to generate document: ${error.message}`,
-        variant: "success",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
       setPdfGenerating(false);
-      console.log("Generation process finished");
+      console.log("Document generation process completed");
     }
   };
 
@@ -515,7 +476,7 @@ const ChatBot = () => {
 
       <div className="sticky bottom-0 p-4">
         <div className="max-w-4xl mx-auto flex gap-4">
-          <div className="flex-1 flex items-center gap-2  rounded-lg border p-2">
+          <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
             <Input
               type="text"
               value={questions.length > 0 ? currentAnswer : userInput}
@@ -533,7 +494,7 @@ const ChatBot = () => {
                   ? "Type your answer..."
                   : "Describe the legal document you need..."
               }
-              className="flex-1 border-0 focus-visible:ring-0  focus-visible:ring-offset-0"
+              className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
             <Button variant="ghost" size="icon">
               <Mic className="h-5 w-5 text-gray-400" />

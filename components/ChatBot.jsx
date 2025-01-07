@@ -45,6 +45,7 @@ const countryOptions = countries.map((country) => ({
 const defaultCountry =
   countryOptions.find((country) => country.name === "India") ||
   countryOptions[0];
+
 export default function ChatBox() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -99,6 +100,13 @@ export default function ChatBox() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const scrollArea = document.querySelector(".scroll-area");
+    if (scrollArea) {
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+  }, [messages]);
+
   const handleSend = async () => {
     if (!input.trim()) return;
     setLoading(true);
@@ -120,6 +128,17 @@ export default function ChatBox() {
       ]);
       setInput("");
 
+      // Add a loading message for the assistant's response
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+          loading: true,
+        },
+      ]);
+
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/chat",
         {
@@ -136,10 +155,18 @@ export default function ChatBox() {
           .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
           .trim();
 
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: aiResponse, timestamp: new Date() },
-        ]);
+        // Replace the loading message with the actual response
+        setMessages((prev) =>
+          prev.map((msg, index) =>
+            index === prev.length - 1
+              ? {
+                  role: "assistant",
+                  content: aiResponse,
+                  timestamp: new Date(),
+                }
+              : msg
+          )
+        );
       }
 
       if (responseData && responseData.chat) {
@@ -151,6 +178,8 @@ export default function ChatBox() {
     } catch (error) {
       console.error("Error sending message:", error);
       setLoading(false);
+      // Remove the loading message if there's an error
+      setMessages((prev) => prev.slice(0, -1));
     }
   };
 
@@ -178,6 +207,17 @@ export default function ChatBox() {
     };
 
     try {
+      // Add a loading message for the assistant's response
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+          loading: true,
+        },
+      ]);
+
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/chat",
         {
@@ -194,10 +234,18 @@ export default function ChatBox() {
           .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
           .trim();
 
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: aiResponse, timestamp: new Date() },
-        ]);
+        // Replace the loading message with the actual response
+        setMessages((prev) =>
+          prev.map((msg, index) =>
+            index === prev.length - 1
+              ? {
+                  role: "assistant",
+                  content: aiResponse,
+                  timestamp: new Date(),
+                }
+              : msg
+          )
+        );
       }
 
       setLoading(false);
@@ -205,6 +253,8 @@ export default function ChatBox() {
     } catch (error) {
       console.error("Error generating response:", error);
       setLoading(false);
+      // Remove the loading message if there's an error
+      setMessages((prev) => prev.slice(0, -1));
     }
   };
 
@@ -297,7 +347,7 @@ export default function ChatBox() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 scroll-area">
           <div className="p-4">
             <div className="p-4 flex justify-center">
               <Tabs
@@ -402,16 +452,24 @@ export default function ChatBox() {
                               {format(msg.timestamp, "dd MMM • h:mm a")}
                             </span>
                           </div>
-                          <div
-                            className={`px-3 py-1.5 rounded-lg text-xs ${
-                              msg.role === "user"
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-900"
-                            }`}
-                          >
-                            {msg.content}
-                          </div>
-                          {msg.role === "assistant" && (
+                          {msg.loading ? (
+                            <div className="px-3 py-1.5 rounded-lg text-xs ">
+                              <Skeleton className="w-[200px] h-[12px]" />
+                              <Skeleton className="w-[150px] h-[12px] mt-1" />
+                              <Skeleton className="w-[100px] h-[12px] mt-1" />
+                            </div>
+                          ) : (
+                            <div
+                              className={`px-3 py-1.5 rounded-lg text-xs ${
+                                msg.role === "user"
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-gray-100 text-gray-900"
+                              }`}
+                            >
+                              {msg.content}
+                            </div>
+                          )}
+                          {msg.role === "assistant" && !msg.loading && (
                             <MessageActions
                               onCopy={() => handleCopy(msg.content)}
                               onGenerateResponse={() =>

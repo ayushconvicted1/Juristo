@@ -235,12 +235,12 @@ const ChatBoxForDocs = () => {
         ) : (
           <div className="space-y-6">
             {uploadedFile && (
-              <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg mb-4">
+              <div className="flex items-center justify-between b p-3 rounded-lg mb-4">
                 <div className="flex items-center gap-2">
                   {uploadedFile.type.startsWith("image/") ? (
-                    <ImageIcon className="w-5 h-5 text-gray-500" />
+                    <ImageIcon className="w-5 h-5 " />
                   ) : (
-                    <File className="w-5 h-5 text-gray-500" />
+                    <File className="w-5 h-5 " />
                   )}
                   <span className="text-sm font-medium">
                     {uploadedFile.name}
@@ -250,7 +250,7 @@ const ChatBoxForDocs = () => {
                   variant="ghost"
                   size="sm"
                   onClick={removeFile}
-                  className="hover:bg-gray-200"
+                  className="hover:bg-black-200"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -289,7 +289,7 @@ const ChatBoxForDocs = () => {
                     <div
                       className={`px-3 py-1.5 rounded-lg text-xs ${
                         msg.role === "user"
-                          ? "bg-blue-600 text-white"
+                          ? "bg-blue-600 "
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
@@ -301,14 +301,14 @@ const ChatBoxForDocs = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
+                            className=" rounded-full w-7 h-7 p-0"
                           >
                             😊
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
+                            className=" rounded-full w-7 h-7 p-0"
                           >
                             ☹️
                           </Button>
@@ -317,7 +317,7 @@ const ChatBoxForDocs = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-gray-100 rounded-full"
+                            className=" rounded-full"
                             onClick={() => handleGenerateResponse(msg.content)}
                           >
                             <RefreshCw className="h-4 w-4" />
@@ -325,7 +325,7 @@ const ChatBoxForDocs = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-gray-100 rounded-full"
+                            className=" rounded-full"
                             onClick={() => handleCopy(msg.content)}
                           >
                             <Copy className="h-4 w-4" />
@@ -333,7 +333,7 @@ const ChatBoxForDocs = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="hover:bg-gray-100 rounded-full"
+                            className=" rounded-full"
                             onClick={handleAudioToggle}
                           >
                             <Volume2 className="h-4 w-4" />
@@ -356,7 +356,7 @@ const ChatBoxForDocs = () => {
                 <Avatar className="w-7 h-7">
                   <AvatarFallback>J</AvatarFallback>
                 </Avatar>
-                <div className="max-w-[80%] px-4 py-2 rounded-lg bg-gray-100">
+                <div className="max-w-[80%] px-4 py-2 rounded-lg">
                   <Skeleton className="w-[100px] h-[20px] rounded-full" />
                 </div>
               </div>
