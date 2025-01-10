@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import OpenAI from "openai";
 import mongoose from "mongoose";
 import { Legaldocs } from "@/lib/db/models/Legaldocs";
 import dotenv from "dotenv";
 import axios from "axios";
 import FormData from "form-data";
+import { jsPDF } from "jspdf";
+import { JSDOM } from "jsdom";
+import { marked } from "marked";
 
 dotenv.config();
 
@@ -52,15 +54,18 @@ export async function POST(req) {
       timeout: 600000,
     });
 
-    const systemMessage = `You are a professional legal assistant... tailored for ${country}.`;
-    const userMessage = `Based on the following user input and answers:
+    const systemMessage = `You are a professional legal assistant... tailored for ${country}. Please provide your response in properly formatted Markdown, ensuring correct indentation and structure for a professional PDF document.`;
+    const userMessage = `Based on the following user input and answers, generate a legal document in Markdown format:
     
     User Input: ${userInput}
     Answers: ${JSON.stringify(answers)}`;
 
     const aiResponse = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [{ role: "user", content: userMessage }],
+      messages: [
+        { role: "system", content: systemMessage },
+        { role: "user", content: userMessage },
+      ],
       max_tokens: 5000,
     });
 
@@ -69,8 +74,7 @@ export async function POST(req) {
       throw new Error("Generated document content is too short or invalid.");
     }
 
-    const pdfContent = `${legalText}`;
-    const pdfBuffer = await generatePDF(pdfContent);
+    const pdfBuffer = await generatePDF(legalText);
     const cloudinaryUrl = await uploadToCloudinary(pdfBuffer);
 
     const document = new Legaldocs({
@@ -104,36 +108,50 @@ export async function POST(req) {
   }
 }
 
-const generatePDF = async (text) => {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([600, 800]);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontSize = 12;
-  const textLines = text.split("\n");
-  let y = 750;
+const generatePDF = async (markdownText) => {
+  const html = marked(markdownText);
+  const dom = new JSDOM(html);
+  const document = dom.window.document;
 
-  for (const line of textLines) {
-    if (y < 50) {
-      const newPage = pdfDoc.addPage([600, 800]);
-      y = 750;
+  const pdf = new jsPDF();
+  const elements = document.body.children;
+  let yOffset = 10;
+
+  for (let i = 0; i < elements.length; i++) {
+    const element = elements[i];
+    const text = element.textContent.trim();
+
+    if (element.tagName === "H1") {
+      pdf.setFontSize(18);
+      pdf.setFont(undefined, "bold");
+    } else if (element.tagName === "H2") {
+      pdf.setFontSize(16);
+      pdf.setFont(undefined, "bold");
+    } else if (element.tagName === "H3") {
+      pdf.setFontSize(14);
+      pdf.setFont(undefined, "bold");
+    } else {
+      pdf.setFontSize(12);
+      pdf.setFont(undefined, "normal");
     }
-    page.drawText(line, {
-      x: 50,
-      y,
-      size: fontSize,
-      font,
-      color: rgb(0, 0, 0),
-    });
-    y -= 20;
+
+    const splitText = pdf.splitTextToSize(text, 180);
+    pdf.text(splitText, 10, yOffset);
+    yOffset += splitText.length * 7;
+
+    if (yOffset > 280) {
+      pdf.addPage();
+      yOffset = 10;
+    }
   }
 
-  return Buffer.from(await pdfDoc.save());
+  return pdf.output("arraybuffer");
 };
 
 const uploadToCloudinary = async (pdfBuffer) => {
   const cloudinaryUrl = "https://api.cloudinary.com/v1_1/dc9msi1wn/auto/upload";
   const formData = new FormData();
-  formData.append("file", pdfBuffer, { filename: "document.pdf" });
+  formData.append("file", Buffer.from(pdfBuffer), { filename: "document.pdf" });
   formData.append("upload_preset", "wecofy");
 
   try {

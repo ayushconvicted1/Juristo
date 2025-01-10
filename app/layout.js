@@ -3,6 +3,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import Navbar from "@/components/Navbar";
 import { ThemeProvider } from "next-themes";
+import "../app/formatted-content.css";
 
 export const metadata = {
   title: "J U R I S T O",

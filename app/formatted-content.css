@@ -1,0 +1,107 @@
+.formatted-content {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.formatted-content h1,
+.formatted-content h2,
+.formatted-content h3,
+.formatted-content h4,
+.formatted-content h5,
+.formatted-content h6 {
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+  font-weight: bold;
+}
+
+.formatted-content h1 {
+  font-size: 1.5em;
+}
+.formatted-content h2 {
+  font-size: 1.3em;
+}
+.formatted-content h3 {
+  font-size: 1.2em;
+}
+.formatted-content h4 {
+  font-size: 1.1em;
+}
+.formatted-content h5 {
+  font-size: 1em;
+}
+.formatted-content h6 {
+  font-size: 0.9em;
+}
+
+.formatted-content p {
+  margin-bottom: 1em;
+}
+
+.formatted-content ul,
+.formatted-content ol {
+  margin-left: 1.5em;
+  margin-bottom: 1em;
+  padding-left: 1em;
+}
+
+.formatted-content li {
+  margin-bottom: 0.5em;
+}
+
+.formatted-content ul > li {
+  list-style-type: disc;
+}
+
+.formatted-content ol > li {
+  list-style-type: decimal;
+}
+
+.formatted-content pre {
+  background-color: #f4f4f4;
+  padding: 1em;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.formatted-content code {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.9em;
+  background-color: #f4f4f4;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+.formatted-content blockquote {
+  border-left: 4px solid #ccc;
+  padding-left: 1em;
+  margin-left: 0;
+  margin-bottom: 1em;
+  font-style: italic;
+}
+
+.formatted-content strong {
+  font-weight: bold;
+}
+
+.formatted-content em {
+  font-style: italic;
+}
+
+.formatted-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+}
+
+.formatted-content th,
+.formatted-content td {
+  border: 1px solid #ccc;
+  padding: 0.5em;
+  text-align: left;
+}
+
+.formatted-content th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}

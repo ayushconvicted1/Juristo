@@ -27,6 +27,8 @@ import Image from "next/image";
 import { toast } from "react-hot-toast";
 import { HashLoader } from "react-spinners";
 import cn from "classnames";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const formatMessageTime = (timestamp) => {
   if (timestamp && !isNaN(new Date(timestamp).getTime())) {
@@ -293,7 +295,12 @@ const ChatBoxForDocs = () => {
                           : "bg-gray-100 text-gray-900"
                       }`}
                     >
-                      {msg.content}
+                      <ReactMarkdown
+                        className="formatted-content prose prose-sm max-w-none"
+                        remarkPlugins={[remarkGfm]}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                     {msg.role === "assistant" && (
                       <div className="flex justify-between items-center mt-2">

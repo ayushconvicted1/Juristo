@@ -37,6 +37,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import countries from "world-countries";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const countryOptions = countries.map((country) => ({
   name: country.name.common,
@@ -139,14 +141,11 @@ export default function ChatBox() {
         },
       ]);
 
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMessage),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
 
       const responseData = await response.json();
 
@@ -218,14 +217,11 @@ export default function ChatBox() {
         },
       ]);
 
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMessage),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
 
       const responseData = await response.json();
 
@@ -466,7 +462,16 @@ export default function ChatBox() {
                                   : "bg-gray-100 text-gray-900"
                               }`}
                             >
-                              {msg.content}
+                              {msg.role === "user" ? (
+                                msg.content
+                              ) : (
+                                <ReactMarkdown
+                                  className="formatted-content prose prose-sm max-w-none"
+                                  remarkPlugins={[remarkGfm]}
+                                >
+                                  {msg.content}
+                                </ReactMarkdown>
+                              )}
                             </div>
                           )}
                           {msg.role === "assistant" && !msg.loading && (

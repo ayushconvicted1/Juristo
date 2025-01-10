@@ -5,6 +5,7 @@ import ChatBot from "@/components/ChatBot";
 import ChatList from "@/components/ChatList";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import "@/app/formatted-content.css";
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState("chat");
