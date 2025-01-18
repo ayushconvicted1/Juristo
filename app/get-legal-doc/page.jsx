@@ -210,15 +210,17 @@ const ChatBot = () => {
       const requestPayload = {
         userId: user.userId,
         answers: Array.isArray(answersToGenerate) ? answersToGenerate : [],
-        country: user.country?.label || null,
+        country: user.country?.label || "Unknown",
         userInput: userInput.trim(),
       };
 
       console.log("Request Payload:", requestPayload);
 
-      if (!requestPayload.country) {
-        console.error("Country is missing in payload");
-        throw new Error("Country is required to generate the document.");
+      if (!requestPayload.country || requestPayload.country === "Unknown") {
+        console.error("Country is missing or invalid in payload");
+        throw new Error(
+          "Valid country information is required to generate the document."
+        );
       }
 
       // Send request to backend
@@ -229,7 +231,9 @@ const ChatBot = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({
+          error: "Unknown backend error.",
+        }));
         console.error("Backend error response:", errorData);
         throw new Error(errorData.error || "Failed to generate document.");
       }
