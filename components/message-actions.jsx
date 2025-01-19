@@ -11,7 +11,7 @@ export function MessageActions({
   content,
 }) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-2 ", className)}>
       {showGenerateResponse && (
         <Button
           variant="secondary"

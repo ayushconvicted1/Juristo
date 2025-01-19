@@ -339,8 +339,8 @@ const ChatBot = () => {
                   <div
                     className={`px-3 py-1.5 rounded-lg text-xs ${
                       msg.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-900"
+                        ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
+                        : "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
                     }`}
                   >
                     {msg.content}
@@ -511,7 +511,7 @@ const ChatBot = () => {
             <Button
               onClick={questions.length > 0 ? handleAnswerSubmit : handleSend}
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white hover:bg-blue-700"
             >
               Send
             </Button>
