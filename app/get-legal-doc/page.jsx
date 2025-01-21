@@ -340,7 +340,7 @@ const ChatBot = () => {
                     className={`px-3 py-1.5 rounded-lg text-xs ${
                       msg.role === "user"
                         ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
-                        : "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
+                        : "bg-gray-100 p-4"
                     }`}
                   >
                     {msg.content}
