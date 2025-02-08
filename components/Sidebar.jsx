@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -86,20 +87,17 @@ export default function Sidebar() {
       onClick: () => setShowHelp(true),
     },
   ];
-
   const handleclick = () => {
     router.push("/");
   };
 
   return (
-    <div className="flex h-full w-[280px] flex-col border-r py-4">
-      {/* Header */}
+    <div className="flex h-full w-[280px] flex-col border-r  py-4">
       <div className="flex items-center gap-2 px-4 pb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg font-bold">
           <img
             src="https://res.cloudinary.com/dc9msi1wn/image/upload/v1737221626/LOGO_1_nj85xe.png"
             alt="juristo"
-            className="h-8 w-8"
           />
         </div>
         <button
@@ -110,7 +108,6 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Navigation Items */}
       <div className="flex-1 space-y-1 px-2">
         {navItems.map((item) => (
           <button
@@ -127,7 +124,6 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Premium Section */}
       <div className="px-4 mt-auto">
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white">
@@ -152,24 +148,18 @@ export default function Sidebar() {
           </div>
         </Card>
 
-        {/* User Profile and Logout */}
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-2 hover:opacity-80">
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {user?.name?.[0]?.toUpperCase()}
-                  </AvatarFallback>
+                  <AvatarFallback>A</AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">
-                  {user?.name || "Guest"}
-                </span>
+                <span className="text-sm font-medium">Alexandra</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[200px]">
-              {/* Link to Dashboard */}
-              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+              <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 Dashboard
               </DropdownMenuItem>
@@ -191,7 +181,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent>
           <DialogHeader>
@@ -209,7 +198,6 @@ export default function Sidebar() {
         </DialogContent>
       </Dialog>
 
-      {/* Help Dialog */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent>
           <DialogHeader>

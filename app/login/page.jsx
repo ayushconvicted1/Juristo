@@ -1,30 +1,34 @@
 "use client";
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
+
+import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { MyContext } from "@/context/MyContext";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Github } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export default function LoginPage() {
+const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user, fetchUserData } = useContext(MyContext);
   const { toast } = useToast();
 
-  // Check if user is already logged in
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const user = localStorage.getItem("user");
-      if (user) {
-        router.push("/");
-      }
+    if (user) {
+      router.push("/");
     }
-  }, [router]);
+  }, [user, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,35 +47,17 @@ export default function LoginPage() {
           body: JSON.stringify(formData),
         }
       );
-
+      if (!response.ok) throw new Error("Login failed");
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
       if (typeof window !== "undefined") {
-        // Store all user data from login response
         localStorage.setItem("token", data.token);
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            userId: data._id,
-            email: data.email,
-            name: data.name,
-            country: data.country,
-            language: data.language,
-            createdAt: data.createdAt,
-          })
-        );
       }
-
+      await fetchUserData(formData.email);
       toast({
         title: "Success",
         description: "You have successfully logged in.",
         variant: "default",
       });
-
       router.push("/");
     } catch (err) {
       toast({
@@ -85,66 +71,69 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2 text-center">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-                <span className="text-white text-base font-medium">J</span>
-              </div>
-              <span className="text-xl font-semibold">Juristo</span>
-            </Link>
-            <h1 className="text-2xl font-bold">Welcome back</h1>
-            <p className="text-sm text-gray-600">
-              Enter your credentials to access your account
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+      <Card className="w-full max-w-md shadow-xl relative z-10 bg-black/50 border-gray-800">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-3xl font-bold text-center text-white">
+            Welcome back
+          </CardTitle>
+          <CardDescription className="text-center text-gray-400">
+            Enter your credentials to access your account
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-gray-200">
+                Email
+              </Label>
               <Input
                 id="email"
-                type="email"
                 name="email"
-                placeholder="name@example.com"
+                type="email"
+                placeholder="m@example.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
-
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-[#4B6BFB] hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <Label htmlFor="password" className="text-gray-200">
+                Password
+              </Label>
               <Input
                 id="password"
-                type="password"
                 name="password"
+                type="password"
+                placeholder="••••••••"
                 value={formData.password}
                 onChange={handleChange}
                 required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
-
             <Button
               type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
               disabled={isLoading}
-              className="w-full hover:bg-gray-800"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                "Sign In"
+              )}
             </Button>
           </form>
-
-          <p className="text-center text-sm text-gray-600">
+        </CardContent>
+        <CardFooter>
+          <p className="text-center text-sm w-full text-gray-400">
             Don't have an account?{" "}
             <Link href="/signup" className="text-[#4B6BFB] hover:underline">
               Sign up
@@ -155,7 +144,7 @@ export default function LoginPage() {
       <div className="hidden lg:block lg:flex-1 bg-gray-50">
         <div className="relative w-full h-full">
           <Image
-            src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-off[...]"
+            src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-office-free-photo.jpg"
             alt="Login illustration"
             fill
             className="object-cover"
@@ -176,4 +165,6 @@ export default function LoginPage() {
       </div>
     </div>
   );
-}
+};
+
+export default Login;

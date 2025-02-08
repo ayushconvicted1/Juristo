@@ -154,10 +154,7 @@ export default function ChatBox() {
 
       if (responseData && responseData.response) {
         const aiResponse = responseData.response
-          .replace(
-            /^You are a Legal AI Assistant named Juristo[\s\S]*?(?=\n\n|$)/,
-            ""
-          )
+          .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
           .trim();
 
         // Replace the loading message with the actual response
@@ -283,6 +280,10 @@ export default function ChatBox() {
       description: "Lorem ipsum dolor sit amet, consectetur",
       onClick: () => setCurrentTab("drafting"),
     },
+    {
+      title: "Multi jurisdictional",
+      description: "Lorem ipsum dolor sit amet, consectetur",
+    },
   ];
 
   return (
@@ -375,12 +376,12 @@ export default function ChatBox() {
                   >
                     Case Prediction
                   </TabsTrigger>
-                  {/* <TabsTrigger
+                  <TabsTrigger
                     value="multi-support"
                     className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
                   >
                     MultiSupport
-                  </TabsTrigger> */}
+                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
@@ -401,7 +402,7 @@ export default function ChatBox() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
                     {features.map((feature) => (
                       <Card
                         key={feature.title}
@@ -464,7 +465,7 @@ export default function ChatBox() {
                               className={`px-3 py-1.5 rounded-lg text-xs ${
                                 msg.role === "user"
                                   ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
-                                  : "bg-gray-100 p-4 text-black"
+                                  : "bg-gray-100 p-4"
                               }`}
                             >
                               {msg.role === "user" ? (

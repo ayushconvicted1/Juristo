@@ -1,39 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Github } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-export default function SignUpPage() {
-  const [error, setError] = useState("");
+const Signup = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
-    // Create a FormData object from the form element
-    const formData = new FormData(e.currentTarget);
-    // Convert FormData to a plain object
-    const data = Object.fromEntries(formData.entries());
-
     try {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/auth/signup",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: JSON.stringify(formData),
         }
       );
       if (!response.ok) throw new Error("Signup failed");
@@ -56,130 +63,97 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="space-y-2 text-center">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-                <span className="text-white text-base font-medium">J</span>
-              </div>
-              <span className="text-xl font-semibold">Juristo</span>
-            </Link>
-            <h1 className="text-2xl font-bold">Create an account</h1>
-            <p className="text-sm text-gray-600">
-              Start your 30-day free trial. No credit card required.
-            </p>
-          </div>
-
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First name</Label>
-                <Input id="firstName" name="firstName" type="text" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last name</Label>
-                <Input id="lastName" name="lastName" type="text" required />
-              </div>
-            </div>
-
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
+      <Card className="w-full max-w-md shadow-xl relative z-10 bg-black/50 border-gray-800">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-3xl font-bold text-center text-white">
+            Create an Account
+          </CardTitle>
+          <CardDescription className="text-center text-gray-400">
+            Enter your details to sign up
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Work email</Label>
+              <Label htmlFor="name" className="text-gray-200">
+                Full Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-gray-200">
+                Email
+              </Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="name@company.com"
+                placeholder="m@example.com"
+                value={formData.email}
+                onChange={handleChange}
                 required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
-              <p className="text-xs text-gray-500">
-                Must be at least 8 characters long
-              </p>
+              <Label htmlFor="password" className="text-gray-200">
+                Password
+              </Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
             </div>
-
-            <div className="flex items-start space-x-2">
-              <Checkbox id="terms" name="terms" />
-              <label
-                htmlFor="terms"
-                className="text-sm text-gray-600 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                I agree to the{" "}
-                <Link href="/terms" className="text-[#4B6BFB] hover:underline">
-                  terms of service
-                </Link>{" "}
-                and{" "}
-                <Link
-                  href="/privacy"
-                  className="text-[#4B6BFB] hover:underline"
-                >
-                  privacy policy
-                </Link>
-              </label>
-            </div>
-
             <Button
               type="submit"
-              className="w-full hover:bg-gray-800"
+              className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
               disabled={isLoading}
             >
-              Create account
-            </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                /* Add GitHub OAuth logic */
-              }}
-            >
-              <Github className="w-4 h-4 mr-2" />
-              Sign up with GitHub
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
+                </>
+              ) : (
+                "Sign Up"
+              )}
             </Button>
           </form>
-
-          <p className="text-center text-sm text-gray-600">
+        </CardContent>
+        <CardFooter>
+          <p className="text-center text-sm w-full text-gray-400">
             Already have an account?{" "}
-            <Link href="/login" className="text-[#4B6BFB] hover:underline">
-              Sign in
-            </Link>
+            <span
+              onClick={() => router.push("/login")}
+              className="text-blue-400 font-semibold cursor-pointer hover:underline"
+            >
+              Log in here
+            </span>
           </p>
-        </div>
-      </div>
-      <div className="hidden lg:block lg:flex-1 bg-gray-50">
-        <div className="relative w-full h-full">
-          <Image
-            src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-office-free-photo.jpg"
-            alt="Sign up illustration"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/40 to-gray-900/0" />
-          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-            <blockquote className="space-y-2">
-              <p className="text-lg">
-                "The onboarding process was seamless, and the platform's
-                capabilities exceeded our expectations."
-              </p>
-              <footer className="text-sm">
-                <cite>Michael Torres, Legal Operations Manager</cite>
-              </footer>
-            </blockquote>
-          </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </div>
   );
-}
+};
+
+export default Signup;
