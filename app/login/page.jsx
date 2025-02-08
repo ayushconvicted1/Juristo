@@ -155,7 +155,7 @@ export default function LoginPage() {
       <div className="hidden lg:block lg:flex-1 bg-gray-50">
         <div className="relative w-full h-full">
           <Image
-            src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-office-free-photo.jpg"
+            src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-off[...]"
             alt="Login illustration"
             fill
             className="object-cover"
