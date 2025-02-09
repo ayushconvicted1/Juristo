@@ -16,18 +16,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react";
+import { Loader2, Github } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { user } = useContext(MyContext);
   const { toast } = useToast();
 
+  // Redirect to dashboard if token or user exists
   useEffect(() => {
-    // If token exists in localStorage or user is set in context, redirect to dashboard
     const token = localStorage.getItem("token");
     if (token || user) {
       router.push("/dashboard");
@@ -42,13 +44,20 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      if (!response.ok) throw new Error("Login failed");
+      const response = await fetch(
+        "https://juristo-backend-azure.vercel.app/api/auth/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+        }
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Login failed");
+      }
       const data = await response.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
@@ -59,6 +68,8 @@ export default function Login() {
       });
       router.push("/dashboard");
     } catch (err) {
+      console.error("Login Error:", err);
+      setError(err instanceof Error ? err.message : "An error occurred");
       toast({
         title: "Error",
         description: err instanceof Error ? err.message : "An error occurred",
@@ -70,39 +81,46 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]"></div>
-      <Card className="w-full max-w-md shadow-xl relative z-10 bg-black/50 border-gray-800">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-3xl font-bold text-center text-white">
-            Welcome back
-          </CardTitle>
-          <CardDescription className="text-center text-gray-400">
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex">
+      {/* Left Section: Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="space-y-2 text-center">
+            <Link href="/" className="inline-flex items-center gap-2">
+              <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
+                <span className="text-white text-base font-medium">J</span>
+              </div>
+              <span className="text-xl font-semibold">Juristo</span>
+            </Link>
+            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <p className="text-sm text-gray-600">
+              Enter your credentials to access your account.
+            </p>
+          </div>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-200">
-                Email
-              </Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="name@company.com"
                 value={formData.email}
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-200">
-                Password
-              </Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 name="password"
@@ -112,12 +130,12 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 disabled={isLoading}
-                className="bg-gray-800 border-gray-700 text-white"
               />
             </div>
+
             <Button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="w-full bg-white hover:bg-gray-400"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -129,17 +147,30 @@ export default function Login() {
                 "Sign In"
               )}
             </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                // Add GitHub OAuth logic here if needed
+              }}
+            >
+              <Github className="w-4 h-4 mr-2" />
+              Sign in with GitHub
+            </Button>
           </form>
-        </CardContent>
-        <CardFooter>
-          <p className="text-center text-sm w-full text-gray-400">
+
+          <p className="text-center text-sm text-gray-600">
             Don't have an account?{" "}
             <Link href="/signup" className="text-[#4B6BFB] hover:underline">
               Sign up
             </Link>
           </p>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
+
+      {/* Right Section: Illustration */}
       <div className="hidden lg:block lg:flex-1 bg-gray-50">
         <div className="relative w-full h-full">
           <Image
