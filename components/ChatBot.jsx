@@ -2,18 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowUpRight,
-  Flag,
-  Mic,
-  Moon,
-  Plus,
-  Settings,
-  MessageSquare,
-  HelpCircle,
-  Sun,
-  ChevronDown,
-} from "lucide-react";
+import { ArrowUpRight, Mic, Moon, Sun, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { MyContext } from "@/context/MyContext";
 import { Button } from "@/components/ui/button";
@@ -27,7 +16,6 @@ import ChatBoxForDocs from "@/components/ChatBotForImage";
 import ChatBot from "@/app/get-legal-doc/page";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
-import cn from "classnames";
 import { useTheme } from "next-themes";
 import ChatList from "./ChatList";
 import {
@@ -57,24 +45,25 @@ export default function ChatBox() {
   const [loading, setLoading] = useState(false);
   const [currentTab, setCurrentTab] = useState("chat");
   const [showFeatures, setShowFeatures] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
 
-  const { user, selectedChat, selectedLanguage, fetchChats, setSelectedChat } =
-    useContext(MyContext);
+  const {
+    user,
+    loading: contextLoading,
+    selectedChat,
+    selectedLanguage,
+    fetchChats,
+    setSelectedChat,
+  } = useContext(MyContext);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        router.push("/login");
-      }
+    if (!contextLoading && !user) {
+      router.push("/login");
     }
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [user, router]);
+  }, [contextLoading, user, router]);
 
   useEffect(() => {
     console.log("Current theme:", theme);
@@ -110,17 +99,20 @@ export default function ChatBox() {
   }, [messages]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || !user) return;
     setLoading(true);
     setShowFeatures(false);
 
     const newMessage = {
-      userId: user?.userId,
+      userId: user._id,
       message: input,
       newChat: !selectedChat,
       chatId: selectedChat?.chatId,
       country: selectedCountry.name,
-      language: selectedLanguage.label || user?.language.label,
+      language:
+        selectedLanguage.label ||
+        (user.language && user.language.label) ||
+        "English",
     };
 
     try {
@@ -130,7 +122,7 @@ export default function ChatBox() {
       ]);
       setInput("");
 
-      // Add a loading message for the assistant's response
+      // Add a loading placeholder for the assistant response
       setMessages((prev) => [
         ...prev,
         {
@@ -154,10 +146,12 @@ export default function ChatBox() {
 
       if (responseData && responseData.response) {
         const aiResponse = responseData.response
-          .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
+          .replace(
+            /^You are a Legal AI Assistant named Juristo[\s\S]*?(?=\n\n|$)/,
+            ""
+          )
           .trim();
 
-        // Replace the loading message with the actual response
         setMessages((prev) =>
           prev.map((msg, index) =>
             index === prev.length - 1
@@ -180,7 +174,6 @@ export default function ChatBox() {
     } catch (error) {
       console.error("Error sending message:", error);
       setLoading(false);
-      // Remove the loading message if there's an error
       setMessages((prev) => prev.slice(0, -1));
     }
   };
@@ -188,28 +181,27 @@ export default function ChatBox() {
   const handleCopy = (content) => {
     navigator.clipboard
       .writeText(content)
-      .then(() => {
-        console.log("Message copied to clipboard");
-      })
-      .catch((error) => {
-        console.error("Failed to copy message:", error);
-      });
+      .then(() => console.log("Message copied to clipboard"))
+      .catch((error) => console.error("Failed to copy message:", error));
   };
 
   const handleGenerateResponse = async (userQuery) => {
+    if (!user) return;
     setLoading(true);
 
     const newMessage = {
-      userId: user?.userId,
+      userId: user._id,
       message: userQuery,
       newChat: false,
       chatId: selectedChat?.chatId,
       country: selectedCountry.name,
-      language: selectedLanguage.label || user?.language.label,
+      language:
+        selectedLanguage.label ||
+        (user.language && user.language.label) ||
+        "English",
     };
 
     try {
-      // Add a loading message for the assistant's response
       setMessages((prev) => [
         ...prev,
         {
@@ -236,7 +228,6 @@ export default function ChatBox() {
           .replace(/^You are a Legal AI Assistant[\s\S]*?(?=\n\n|$)/, "")
           .trim();
 
-        // Replace the loading message with the actual response
         setMessages((prev) =>
           prev.map((msg, index) =>
             index === prev.length - 1
@@ -255,13 +246,12 @@ export default function ChatBox() {
     } catch (error) {
       console.error("Error generating response:", error);
       setLoading(false);
-      // Remove the loading message if there's an error
       setMessages((prev) => prev.slice(0, -1));
     }
   };
 
   const handleToggleAudio = () => {
-    // Implement audio toggle logic
+    // Implement audio toggle logic if needed
   };
 
   const features = [
@@ -280,24 +270,19 @@ export default function ChatBox() {
       description: "Lorem ipsum dolor sit amet, consectetur",
       onClick: () => setCurrentTab("drafting"),
     },
-    {
-      title: "Multi jurisdictional",
-      description: "Lorem ipsum dolor sit amet, consectetur",
-    },
   ];
 
   return (
     <div className="flex h-screen">
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="sticky top-0  border-b p-4">
+        <div className="sticky top-0 border-b p-4">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div /> {/* Empty div for spacing */}
+            <div /> {/* Spacer */}
             <div className="flex items-center gap-4">
               <DropdownMenu>
-                {/* Trigger Button */}
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2 px-4 py-2 border rounded-md  shadow-sm ">
+                  <button className="flex items-center gap-2 px-4 py-2 border rounded-md shadow-sm">
                     <Image
                       src={selectedCountry.flag}
                       alt={`${selectedCountry.name} flag`}
@@ -311,14 +296,12 @@ export default function ChatBox() {
                     <ChevronDown className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
-
-                {/* Dropdown Content */}
-                <DropdownMenuContent className="w-64 max-h-60 overflow-y-auto  border rounded-md shadow-lg">
+                <DropdownMenuContent className="w-64 max-h-60 overflow-y-auto border rounded-md shadow-lg">
                   {countryOptions.map((country) => (
                     <DropdownMenuItem
                       key={country.name}
                       onSelect={() => setSelectedCountry(country)}
-                      className="flex items-center gap-2 px-4 py-2  cursor-pointer"
+                      className="flex items-center gap-2 px-4 py-2 cursor-pointer"
                     >
                       <Image
                         src={country.flag}
@@ -345,7 +328,7 @@ export default function ChatBox() {
                 )}
               </Button>
             </div>
-            <div /> {/* Empty div for spacing */}
+            <div /> {/* Spacer */}
           </div>
         </div>
 
@@ -376,17 +359,10 @@ export default function ChatBox() {
                   >
                     Case Prediction
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="multi-support"
-                    className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
-                  >
-                    MultiSupport
-                  </TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
-            {/* Main Content Area */}
             <div className="mt-8">
               {showFeatures && (
                 <>
@@ -402,7 +378,7 @@ export default function ChatBox() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                     {features.map((feature) => (
                       <Card
                         key={feature.title}
@@ -455,7 +431,7 @@ export default function ChatBox() {
                             </span>
                           </div>
                           {msg.loading ? (
-                            <div className="px-3 py-1.5 rounded-lg text-xs ">
+                            <div className="px-3 py-1.5 rounded-lg text-xs">
                               <Skeleton className="w-[200px] h-[12px]" />
                               <Skeleton className="w-[150px] h-[12px] mt-1" />
                               <Skeleton className="w-[100px] h-[12px] mt-1" />
@@ -464,7 +440,7 @@ export default function ChatBox() {
                             <div
                               className={`px-3 py-1.5 rounded-lg text-xs ${
                                 msg.role === "user"
-                                  ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
+                                  ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4"
                                   : "bg-gray-100 p-4"
                               }`}
                             >
@@ -472,7 +448,7 @@ export default function ChatBox() {
                                 msg.content
                               ) : (
                                 <ReactMarkdown
-                                  className="formatted-content prose prose-sm max-w-none"
+                                  className="formatted-content prose prose-sm max-w-none text-black"
                                   remarkPlugins={[remarkGfm]}
                                 >
                                   {msg.content}
@@ -511,14 +487,14 @@ export default function ChatBox() {
         {currentTab === "chat" && (
           <div className="p-4 border-t">
             <div className="max-w-4xl mx-auto flex gap-4">
-              <div className="flex-1 flex items-center gap-2  rounded-lg border p-2">
+              <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
                 <Input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Ask questions for your legal help"
-                  className="flex-1 border-0 focus-visible:ring-0  focus-visible:ring-offset-0"
+                  className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <Button variant="ghost" size="icon">
                   <Mic className="h-5 w-5 text-gray-400" />
@@ -536,7 +512,7 @@ export default function ChatBox() {
         )}
       </div>
 
-      {/* Right Sidebar - Chat List */}
+      {/* Right Sidebar – Chat List */}
       <div className="w-80 border-l">
         <ChatList currentTab={currentTab} />
       </div>

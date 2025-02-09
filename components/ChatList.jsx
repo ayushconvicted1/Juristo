@@ -34,14 +34,14 @@ const ChatList = ({ currentTab }) => {
 
   useEffect(() => {
     const fetchChats = async () => {
-      if (!user?.userId) return;
-
+      // Use user._id as the unique identifier
+      if (!user?._id) return;
       setIsLoading(true);
       try {
         const data = await fetch(
           `https://juristo-backend-azure.vercel.app/api/${
             currentTab === "analysis" ? "image-chat" : "chat"
-          }/${user.userId}`
+          }/${user._id}`
         ).then((res) => res.json());
         setChats(data.reverse());
       } catch (error) {
@@ -56,7 +56,7 @@ const ChatList = ({ currentTab }) => {
       }
     };
     fetchChats();
-  }, [user, currentTab]);
+  }, [user, currentTab, setChats, toast]);
 
   const deleteChat = async (chatId) => {
     setChatToDelete(chatId);
@@ -127,7 +127,8 @@ const ChatList = ({ currentTab }) => {
   const filteredChats = chats.filter(
     (chat) =>
       chat.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      chat.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      (chat.description &&
+        chat.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const sortedChats = [

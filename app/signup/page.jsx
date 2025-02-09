@@ -18,7 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
   });
@@ -26,23 +27,22 @@ const Signup = () => {
   const router = useRouter();
   const { toast } = useToast();
 
+  // Update form data on input change
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/auth/signup",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (!response.ok) throw new Error("Signup failed");
       await response.json();
       toast({
@@ -77,15 +77,31 @@ const Signup = () => {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-gray-200">
-                Full Name
+              <Label htmlFor="firstName" className="text-gray-200">
+                First Name
               </Label>
               <Input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
-                placeholder="John Doe"
-                value={formData.name}
+                placeholder="John"
+                value={formData.firstName}
+                onChange={handleChange}
+                required
+                disabled={isLoading}
+                className="bg-gray-800 border-gray-700 text-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName" className="text-gray-200">
+                Last Name
+              </Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                type="text"
+                placeholder="Doe"
+                value={formData.lastName}
                 onChange={handleChange}
                 required
                 disabled={isLoading}

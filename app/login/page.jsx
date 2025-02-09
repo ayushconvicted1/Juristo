@@ -2,6 +2,8 @@
 
 import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { MyContext } from "@/context/MyContext";
 import {
   Card,
@@ -17,18 +19,20 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const Login = () => {
+export default function Login() {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { user, fetchUserData } = useContext(MyContext);
+  const { user } = useContext(MyContext);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      router.push("/");
+    // If token exists in localStorage or user is set in context, redirect to dashboard
+    const token = localStorage.getItem("token");
+    if (token || user) {
+      router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [router, user]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,26 +43,21 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/auth/login",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
       if (!response.ok) throw new Error("Login failed");
       const data = await response.json();
-      if (typeof window !== "undefined") {
-        localStorage.setItem("token", data.token);
-      }
-      await fetchUserData(formData.email);
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data));
       toast({
         title: "Success",
         description: "You have successfully logged in.",
         variant: "default",
       });
-      router.push("/");
+      router.push("/dashboard");
     } catch (err) {
       toast({
         title: "Error",
@@ -139,8 +138,8 @@ const Login = () => {
               Sign up
             </Link>
           </p>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
       <div className="hidden lg:block lg:flex-1 bg-gray-50">
         <div className="relative w-full h-full">
           <Image
@@ -165,6 +164,4 @@ const Login = () => {
       </div>
     </div>
   );
-};
-
-export default Login;
+}

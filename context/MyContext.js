@@ -1,7 +1,6 @@
 "use client";
 import React, { createContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import jwt from "jsonwebtoken";
 
 const MyContext = createContext();
 
@@ -17,66 +16,83 @@ const MyProvider = ({ children }) => {
     label: "English",
   });
   const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true); // true until auth is verified
   const router = useRouter();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const token = localStorage.getItem("token");
-      if (token) {
-        try {
-          console.log("T O K E N", token);
-          const decoded = jwt.decode(token);
-          const email = decoded?.email;
-
-          if (email) {
-            fetchUserData(email);
+    const initializeAuth = async () => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+        if (token) {
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
           } else {
-            console.error("Email not found in token");
+            try {
+              // Validate the token with the backend
+              const response = await fetch(
+                "https://juristo-backend-azure.vercel.app/api/auth/validate",
+                {
+                  method: "GET",
+                  headers: { Authorization: `Bearer ${token}` },
+                }
+              );
+              if (!response.ok) {
+                throw new Error("Invalid or expired token");
+              }
+              const decoded = await response.json();
+              const email = decoded.email;
+              if (email) {
+                await fetchUserData(email);
+              } else {
+                throw new Error("Email not found in token");
+              }
+            } catch (error) {
+              console.error("Error initializing auth:", error);
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              router.push("/login");
+            }
           }
-        } catch (error) {
-          console.error("Error decoding token:", error);
+        } else {
+          router.push("/login");
         }
-      } else {
-        console.log("No token found, redirecting to login");
-        router.push("/login");
       }
-    }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, [router]);
 
   const fetchUserData = async (email) => {
     try {
       const response = await fetch(
         `https://juristo-backend-azure.vercel.app/api/users/get/${email}`
-        // http://localhost:5000/api/users/get/${email}
       );
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
       }
       const data = await response.json();
       setUser(data);
+      localStorage.setItem("user", JSON.stringify(data));
       fetchChats(data);
       setSelectedCountry(data.country);
       setSelectedLanguage(data.language);
-      console.log("Fetched user data:", data);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
 
-  const fetchChats = async (user) => {
-    const data = await fetch(
-      `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
-      // http://localhost:5000/api/chat/${user.userId}
-    ).then((res) => res.json());
-    setChats(data.reverse());
-  };
-
-  const fetchDocChats = async (user) => {
-    const data = await fetch(
-      `https://juristo-backend-azure.vercel.app/api/chat/${user.userId}`
-      // http://localhost:5000/api/image-chat/${user.userId}
-    ).then((res) => res.json());
-    setChats(data.reverse());
+  const fetchChats = async (userData) => {
+    try {
+      const response = await fetch(
+        `https://juristo-backend-azure.vercel.app/api/chat/${userData._id}`
+      );
+      const data = await response.json();
+      setChats(data.reverse());
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    }
   };
 
   return (
@@ -85,16 +101,16 @@ const MyProvider = ({ children }) => {
         user,
         setUser,
         fetchUserData,
-        setSelectedChat,
         selectedChat,
+        setSelectedChat,
         chats,
         setChats,
         fetchChats,
-        fetchDocChats,
-        setSelectedCountry,
         selectedCountry,
-        setSelectedLanguage,
+        setSelectedCountry,
         selectedLanguage,
+        setSelectedLanguage,
+        loading,
       }}
     >
       {children}

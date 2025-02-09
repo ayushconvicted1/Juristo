@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from "mongoose";
 import { Legaldocs } from "@/lib/db/models/Legaldocs";
 import dotenv from "dotenv";
@@ -14,7 +14,6 @@ dotenv.config();
 // Database connection function
 async function connectToDatabase() {
   if (mongoose.connection.readyState >= 1) return;
-
   try {
     await mongoose.connect(process.env.MONGO_URI, {
       useNewUrlParser: true,
@@ -31,7 +30,6 @@ async function connectToDatabase() {
 export async function POST(req) {
   try {
     await connectToDatabase();
-
     const requestData = await req.json().catch((error) => {
       console.error("Invalid JSON in request body:", error);
       return NextResponse.json(
@@ -49,10 +47,8 @@ export async function POST(req) {
       );
     }
 
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      timeout: 600000,
-    });
+    // Initialize Gemini Client
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
     const systemMessage = `You are a professional legal assistant... tailored for ${country}. Please provide your response in properly formatted Markdown, ensuring correct indentation and structure for a professional PDF document.`;
     const userMessage = `Based on the following user input and answers, generate a legal document in Markdown format:
@@ -60,16 +56,23 @@ export async function POST(req) {
     User Input: ${userInput}
     Answers: ${JSON.stringify(answers)}`;
 
-    const aiResponse = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        { role: "system", content: systemMessage },
-        { role: "user", content: userMessage },
+    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user", // Gemini does not support "system"; use "user"
+          parts: [{ text: systemMessage }],
+        },
+        {
+          role: "user",
+          parts: [{ text: userMessage }],
+        },
       ],
-      max_tokens: 5000,
     });
 
-    const legalText = aiResponse?.choices?.[0]?.message?.content?.trim();
+    const response = await result.response;
+    const legalText = response.text().trim();
+
     if (!legalText || legalText.length < 10) {
       throw new Error("Generated document content is too short or invalid.");
     }
@@ -90,20 +93,19 @@ export async function POST(req) {
     return NextResponse.json({ pdfUrl: cloudinaryUrl });
   } catch (error) {
     console.error("Error in API route:", error);
-
     const isMongooseError = error instanceof mongoose.Error;
-    const isAIError = error instanceof OpenAI.APIError;
+    const isGeminiError = error.message.includes("Gemini");
 
     return NextResponse.json(
       {
         error: isMongooseError
           ? "Database error. Please try again later."
-          : isAIError
+          : isGeminiError
           ? "Error generating document content."
           : "An unexpected error occurred.",
         details: error.message,
       },
-      { status: isMongooseError ? 503 : isAIError ? 500 : 500 }
+      { status: isMongooseError ? 503 : isGeminiError ? 500 : 500 }
     );
   }
 }
@@ -112,7 +114,6 @@ const generatePDF = async (markdownText) => {
   const html = marked(markdownText);
   const dom = new JSDOM(html);
   const document = dom.window.document;
-
   const pdf = new jsPDF();
   const elements = document.body.children;
   let yOffset = 10;

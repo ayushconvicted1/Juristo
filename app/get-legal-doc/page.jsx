@@ -7,7 +7,6 @@ import {
   ArrowUpRight,
   Copy,
   Mic,
-  Moon,
   RefreshCw,
   Volume2,
   Upload,
@@ -28,13 +27,14 @@ import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { HashLoader } from "react-spinners";
 import { Buffer } from "buffer";
-
 import cn from "classnames";
 
 const ChatBot = () => {
   const { toast } = useToast();
   const { user } = useContext(MyContext);
   const chatEndRef = useRef(null);
+
+  // Local state variables
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState([]);
@@ -49,8 +49,9 @@ const ChatBot = () => {
   const [totalPages, setTotalPages] = useState(3);
   const [pdfGenerating, setPdfGenerating] = useState(false);
 
+  // Verify that the user data is present
   useEffect(() => {
-    if (!user || !user.userId) {
+    if (!user || !user._id) {
       console.warn(
         "User is not initialized or missing user ID. Ensure proper context setup."
       );
@@ -62,14 +63,16 @@ const ChatBot = () => {
     }
   }, [user, toast]);
 
+  // Auto-scroll to the bottom when messages change
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
+  // Function to fetch questions for generating the document
   const fetchQuestions = async () => {
-    if (!user || !user.country || !user.userId) {
+    if (!user || !user.country || !user._id) {
       toast({
         title: "User Information Missing",
         description: "Please log in to continue.",
@@ -98,7 +101,7 @@ const ChatBot = () => {
           body: JSON.stringify({
             userInput,
             country: user.country.label,
-            userId: user.userId,
+            userId: user._id,
           }),
         }
       );
@@ -137,6 +140,7 @@ const ChatBot = () => {
     }
   };
 
+  // Submit an answer for the current question
   const handleAnswerSubmit = () => {
     if (!currentAnswer.trim()) {
       toast({
@@ -175,8 +179,9 @@ const ChatBot = () => {
     }
   };
 
+  // Generate the legal document based on answers
   const handleGenerate = async (answersToGenerate) => {
-    if (!user || !user.userId || !user.country) {
+    if (!user || !user._id || !user.country) {
       console.error("User information incomplete:", { user });
       toast({
         title: "User Information Incomplete",
@@ -208,7 +213,7 @@ const ChatBot = () => {
       });
 
       const requestPayload = {
-        userId: user.userId,
+        userId: user._id,
         answers: Array.isArray(answersToGenerate) ? answersToGenerate : [],
         country: user.country?.label || "Unknown",
         userInput: userInput.trim(),
@@ -223,7 +228,7 @@ const ChatBot = () => {
         );
       }
 
-      // Send request to backend
+      // Send request to backend (adjust the endpoint as needed)
       const response = await fetch("/api/legaldocs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -279,6 +284,7 @@ const ChatBot = () => {
     }
   };
 
+  // Called when the user presses "Send" without any questions
   const handleSend = async () => {
     if (!userInput.trim()) {
       toast({
@@ -299,8 +305,15 @@ const ChatBot = () => {
     await fetchQuestions();
   };
 
+  // Placeholder for regenerating a response (if needed)
+  const handleGenerateResponse = async (content) => {
+    toast.success("Regenerating response...");
+    // Add your regeneration logic here if needed.
+  };
+
+  // Toggle text-to-speech (placeholder)
   const handleAudioToggle = () => {
-    // Implement text-to-speech feature here
+    toast.success("Audio feature coming soon!");
   };
 
   return (
@@ -340,7 +353,7 @@ const ChatBot = () => {
                     className={`px-3 py-1.5 rounded-lg text-xs ${
                       msg.role === "user"
                         ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white"
-                        : "bg-gray-100 p-4"
+                        : "p-4"
                     }`}
                   >
                     {msg.content}
@@ -376,7 +389,12 @@ const ChatBot = () => {
                           variant="ghost"
                           size="sm"
                           className="hover:bg-gray-100 rounded-full"
-                          onClick={() => handleCopy(msg.content)}
+                          onClick={() => {
+                            navigator.clipboard
+                              .writeText(msg.content)
+                              .then(() => toast.success("Copied to clipboard"))
+                              .catch(() => toast.error("Failed to copy"));
+                          }}
                         >
                           <Copy className="h-4 w-4" />
                         </Button>
@@ -426,7 +444,6 @@ const ChatBot = () => {
                           variant="outline"
                           asChild
                           onClick={() => {
-                            console.log("Manual PDF download clicked");
                             toast({
                               title: "Download Started",
                               description: "Manual PDF download started",
@@ -443,7 +460,6 @@ const ChatBot = () => {
                             variant="outline"
                             asChild
                             onClick={() => {
-                              console.log("DOCX download clicked");
                               toast({
                                 title: "Download Started",
                                 description: "DOCX download started",
