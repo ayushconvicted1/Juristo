@@ -1,5 +1,4 @@
 "use client";
-
 import { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,16 +24,19 @@ export default function Login() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { user } = useContext(MyContext);
+  const { user, setUser } = useContext(MyContext); // Ensure `setUser` is available in context
   const { toast } = useToast();
 
   // Redirect to dashboard if token or user exists
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token || user) {
+    const storedUser = localStorage.getItem("user");
+
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser)); // Update context with stored user
       router.push("/dashboard");
     }
-  }, [router, user]);
+  }, [router, setUser]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +47,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
     try {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/auth/login",
@@ -54,13 +57,16 @@ export default function Login() {
           body: JSON.stringify(formData),
         }
       );
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || "Login failed");
       }
+
       const data = await response.json();
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data));
+      setUser(data); // Update context with logged-in user
       toast({
         title: "Success",
         description: "You have successfully logged in.",
@@ -97,13 +103,11 @@ export default function Login() {
               Enter your credentials to access your account.
             </p>
           </div>
-
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -118,7 +122,6 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -132,7 +135,6 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
-
             <Button
               type="submit"
               className="w-full bg-white hover:bg-gray-400"
@@ -147,7 +149,6 @@ export default function Login() {
                 "Sign In"
               )}
             </Button>
-
             <Button
               type="button"
               variant="outline"
@@ -160,7 +161,6 @@ export default function Login() {
               Sign in with GitHub
             </Button>
           </form>
-
           <p className="text-center text-sm text-gray-600">
             Don't have an account?{" "}
             <Link href="/signup" className="text-[#4B6BFB] hover:underline">
@@ -169,7 +169,6 @@ export default function Login() {
           </p>
         </div>
       </div>
-
       {/* Right Section: Illustration */}
       <div className="hidden lg:block lg:flex-1 bg-gray-50">
         <div className="relative w-full h-full">

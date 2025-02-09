@@ -20,19 +20,27 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
-  const { user, loading } = useContext(MyContext);
+  const { user, loading, setUser } = useContext(MyContext); // Ensure `setUser` is available in context
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
+  // Redirect to login if token or user is missing
   useEffect(() => {
-    if (!loading && !user) {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    if (!loading && (!token || !storedUser)) {
+      setUser(null); // Clear user context
       router.push("/login");
+    } else if (storedUser) {
+      setUser(JSON.parse(storedUser)); // Sync user context with localStorage
     }
-  }, [loading, user, router]);
+  }, [loading, router, setUser]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    setUser(null); // Clear user context
     router.push("/login");
   };
 
@@ -65,7 +73,6 @@ export default function Dashboard() {
             Dashboard
           </h1>
         </div>
-
         <div className="flex items-center gap-4">
           <Button
             onClick={goToChats}
@@ -74,7 +81,6 @@ export default function Dashboard() {
             <MessageCircle className="h-4 w-4 mr-2" />
             Go to Chats
           </Button>
-
           <Button
             variant="ghost"
             size="icon"
@@ -87,7 +93,6 @@ export default function Dashboard() {
               <Moon className="h-5 w-5" />
             )}
           </Button>
-
           <Button
             onClick={handleLogout}
             variant="outline"
@@ -109,7 +114,6 @@ export default function Dashboard() {
               Profile Information
             </h2>
           </CardHeader>
-
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
@@ -122,7 +126,6 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div>
@@ -136,7 +139,6 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <Globe className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div>
@@ -148,7 +150,6 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-
             <div className="flex items-center gap-3">
               <Languages className="h-5 w-5 text-gray-500 dark:text-gray-400" />
               <div>
@@ -171,7 +172,6 @@ export default function Dashboard() {
               Exciting Updates Ahead!
             </h2>
           </CardHeader>
-
           <CardContent>
             <div className="flex flex-col items-center justify-center p-8 text-center">
               <div className="mb-4 animate-pulse">
@@ -179,16 +179,13 @@ export default function Dashboard() {
                   <Rocket className="h-12 w-12 text-white" />
                 </div>
               </div>
-
               <h3 className="text-xl font-semibold mb-2 dark:text-gray-200">
                 New Features Coming Soon!
               </h3>
-
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 We're working hard to bring you exciting new features. Stay
                 tuned for amazing updates that will enhance your experience!
               </p>
-
               <div className="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-full text-sm text-purple-600 dark:text-purple-300">
                 <span className="animate-pulse">🚀</span>
                 <span className="ml-2">Launching Summer 2024</span>
