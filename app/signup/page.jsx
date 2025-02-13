@@ -17,8 +17,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2, Github } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox"; // ensure this exists
-import { Alert, AlertDescription } from "@/components/ui/alert"; // ensure these exist
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -43,13 +43,18 @@ const Signup = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // For testing, using a dummy FCM token.
+    // Replace this with the actual token from your Firebase Messaging client if available.
+    const fcmToken = "dummy_fcm_token_for_testing_signup";
+
     try {
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/auth/signup",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({ ...formData, fcmToken }),
         }
       );
       if (!response.ok) {

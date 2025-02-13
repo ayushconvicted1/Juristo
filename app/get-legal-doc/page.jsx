@@ -26,8 +26,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import { useToast } from "@/hooks/use-toast";
 import { HashLoader } from "react-spinners";
-import { Buffer } from "buffer";
 import cn from "classnames";
+
+// Import your ZeptoMail-based sendmail controller function
+import { sendUsageNotificationEmail } from "../../lib/mails/emailTem.js";
 
 const ChatBot = () => {
   const { toast } = useToast();
@@ -70,6 +72,58 @@ const ChatBot = () => {
     }
   }, [messages]);
 
+  /**
+   * Update the draft count by calling the server endpoint.
+   * Based on the updated count, send an email notification.
+   * At 100% usage, show an upgrade dialog.
+   * @returns {Promise<boolean>} true if processing can continue, false if upgrade is required.
+   */
+  const updateDraftCountAndNotify = async () => {
+    try {
+      const response = await fetch(
+        "https://juristo-backend-azure.vercel.app/api/users/updated",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user._id }),
+        }
+      );
+      if (!response.ok) {
+        throw new Error("Failed to update draft count");
+      }
+      const data = await response.json();
+      const count = data.draftCount;
+      console.log("Draft count updated (server):", count);
+
+      if (count === 10) {
+        console.log(
+          "50% usage reached. Sending email notification for 50% usage."
+        );
+        await sendUsageNotificationEmail("50%", user.email);
+      } else if (count >= 20) {
+        console.log(
+          "100% usage reached. Sending email notification for 100% usage."
+        );
+        await sendUsageNotificationEmail("100%", user.email);
+        const upgrade = window.confirm(
+          "You have reached 100% usage of your document drafts. Please upgrade to premium to continue using the service."
+        );
+        if (!upgrade) {
+          toast({
+            title: "Upgrade Required",
+            description: "Upgrade to premium to continue using the service.",
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+      return true;
+    } catch (err) {
+      console.error("Error updating draft count:", err);
+      return true; // Continue even if there's an error updating usage
+    }
+  };
+
   // Function to fetch questions for generating the document
   const fetchQuestions = async () => {
     if (!user || !user.country || !user._id) {
@@ -80,7 +134,6 @@ const ChatBot = () => {
       });
       return;
     }
-
     if (!userInput.trim()) {
       toast({
         title: "Input Required",
@@ -90,7 +143,6 @@ const ChatBot = () => {
       });
       return;
     }
-
     try {
       setLoading(true);
       const response = await fetch(
@@ -105,11 +157,9 @@ const ChatBot = () => {
           }),
         }
       );
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const data = await response.json();
       setQuestions(data.questions || []);
       if (data.questions && data.questions.length > 0) {
@@ -163,7 +213,6 @@ const ChatBot = () => {
       { role: "user", content: currentAnswer.trim(), timestamp: new Date() },
     ]);
     setCurrentAnswer("");
-
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setMessages((prev) => [
@@ -190,7 +239,6 @@ const ChatBot = () => {
       });
       return;
     }
-
     if (!userInput.trim()) {
       console.error("User input is missing");
       toast({
@@ -201,54 +249,47 @@ const ChatBot = () => {
       });
       return;
     }
-
     try {
       setPdfGenerating(true);
       setLoading(true);
       console.log("Starting document generation");
-
       toast({
         title: "Generating Document",
         description: "Please wait while we generate your legal document...",
       });
-
       const requestPayload = {
         userId: user._id,
         answers: Array.isArray(answersToGenerate) ? answersToGenerate : [],
         country: user.country?.label || "Unknown",
         userInput: userInput.trim(),
       };
-
       console.log("Request Payload:", requestPayload);
-
       if (!requestPayload.country || requestPayload.country === "Unknown") {
         console.error("Country is missing or invalid in payload");
         throw new Error(
           "Valid country information is required to generate the document."
         );
       }
-
       // Send request to backend (adjust the endpoint as needed)
       const response = await fetch("/api/legaldocs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestPayload),
       });
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: "Unknown backend error.",
-        }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Unknown backend error." }));
         console.error("Backend error response:", errorData);
         throw new Error(errorData.error || "Failed to generate document.");
       }
-
       const data = await response.json();
       console.log("Response from backend:", data);
-
       if (data.pdfUrl) {
         setPdfUrl(data.pdfUrl);
-
+        // Update the draft count on the server and check usage thresholds.
+        const canProceed = await updateDraftCountAndNotify();
+        if (!canProceed) return; // Stop further processing if the user declines to upgrade.
         setMessages((prev) => [
           ...prev,
           {
@@ -260,7 +301,6 @@ const ChatBot = () => {
             hasPdf: true,
           },
         ]);
-
         toast({
           title: "Success",
           description: "Your legal document has been generated successfully.",
@@ -296,12 +336,10 @@ const ChatBot = () => {
       return;
     }
     setLoading(true);
-
     setMessages((prev) => [
       ...prev,
       { role: "user", content: userInput, timestamp: new Date() },
     ]);
-
     await fetchQuestions();
   };
 

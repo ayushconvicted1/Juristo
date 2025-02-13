@@ -1,94 +1,58 @@
 "use client";
-import { useContext, useEffect, useState } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { MyContext } from "@/context/MyContext";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Loader2, Github } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
 
-// For real notifications, you can integrate Firebase Messaging on the client.
-// import { getMessaging, getToken } from "firebase/messaging";
-// import firebaseApp from "@/firebase/firebaseApp"; // Your Firebase client initialization
-
-export default function Login() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+export default function ForgotPassword() {
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { user, setUser } = useContext(MyContext);
   const { toast } = useToast();
-
-  // Redirect to dashboard if token or user exists
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-      router.push("/dashboard");
-    }
-  }, [router, setUser]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
     setError("");
 
-    // Option 1: Use a dummy FCM token for testing notifications:
-    const fcmToken = "dummy_fcm_token_for_testing";
+    if (!email.trim()) {
+      setError("Please enter your email address.");
+      return;
+    }
 
-    // Option 2: Use Firebase Messaging to get the actual token.
-    // Uncomment and configure if you have Firebase client set up.
-    /*
-    const messaging = getMessaging(firebaseApp);
-    const fcmToken = await getToken(messaging, { vapidKey: "YOUR_VAPID_KEY" });
-    */
+    setIsLoading(true);
 
     try {
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/auth/login",
+        "https://juristo-backend-azure.vercel.app/api/auth/forgotPassword",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, fcmToken }),
+          body: JSON.stringify({ email }),
         }
       );
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Failed to send reset email");
       }
 
-      const data = await response.json();
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data));
-      setUser(data);
       toast({
         title: "Success",
-        description: "You have successfully logged in.",
+        description: "A password reset link has been sent to your email.",
         variant: "default",
       });
-      router.push("/dashboard");
+      // Optionally redirect to a notification page or back to login
+      router.push("/login");
     } catch (err) {
-      console.error("Login Error:", err);
+      console.error("Error sending reset email:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
       toast({
         title: "Error",
@@ -102,7 +66,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section: Form */}
+      {/* Left Section: Forgot Password Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-2 text-center">
@@ -112,9 +76,9 @@ export default function Login() {
               </div>
               <span className="text-xl font-semibold">Juristo</span>
             </Link>
-            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <h1 className="text-2xl font-bold">Forgot Your Password?</h1>
             <p className="text-sm text-gray-600">
-              Enter your credentials to access your account.
+              Enter your email address to receive a secure password reset link.
             </p>
           </div>
           {error && (
@@ -124,27 +88,14 @@ export default function Login() {
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="name@company.com"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleChange}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
               />
@@ -160,32 +111,16 @@ export default function Login() {
                   Please wait
                 </>
               ) : (
-                "Sign In"
+                "Send Reset Link"
               )}
             </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                // Add GitHub OAuth logic here if needed
-              }}
-            >
-              <Github className="w-4 h-4 mr-2" />
-              Sign in with GitHub
-            </Button>
+            <p className="text-center text-sm text-gray-600">
+              Remembered your password?{" "}
+              <Link href="/login" className="text-[#4B6BFB] hover:underline">
+                Log in
+              </Link>
+            </p>
           </form>
-          <p className="text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link href="/signup" className="text-[#4B6BFB] hover:underline">
-              Sign up
-            </Link>
-          </p>
-          <p className="text-center text-sm text-gray-600">
-            <Link href="/fpw" className="text-[#4B6BFB] hover:underline">
-              Forgot Password?
-            </Link>
-          </p>
         </div>
       </div>
       {/* Right Section: Illustration */}
@@ -193,7 +128,7 @@ export default function Login() {
         <div className="relative w-full h-full">
           <Image
             src="https://static.vecteezy.com/system/resources/previews/027/105/968/large_2x/legal-law-and-justice-concept-open-law-book-with-a-wooden-judges-gavel-in-a-courtroom-or-law-enforcement-office-free-photo.jpg"
-            alt="Login illustration"
+            alt="Forgot Password illustration"
             fill
             className="object-cover"
           />
