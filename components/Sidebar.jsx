@@ -78,7 +78,7 @@ export default function Sidebar() {
     },
     {
       icon: Code,
-      label: "API",
+      label: "Developer API",
       onClick: () => router.push("/apidocs"),
     },
     {
