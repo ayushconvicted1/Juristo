@@ -25,7 +25,7 @@ export default function Home() {
             id: "connection",
             name: "Connection",
             icon: <Code2 className="w-5 h-5" />,
-            description: "Fetches the details of the user associated with the provided API key",
+            description: "Fetches the details of the user associated with the provided API key, including their name and subscription type. This endpoint is used to verify the connection and authentication status of the user.",
             method: "GET",
             path: "/connection",
             request: {
@@ -47,7 +47,7 @@ export default function Home() {
             id: "chat",
             name: "Chat",
             icon: <MessageSquare className="w-5 h-5" />,
-            description: "Facilitates chat interactions with the Juristo Legal AI Assistant",
+            description: "Facilitates chat interactions with the Juristo Legal AI Assistant. This endpoint processes user messages and responds based on the context provided. The chatId is used to maintain the conversation state.",
             method: "POST",
             path: "/chat",
             request: {
@@ -78,7 +78,7 @@ export default function Home() {
             id: "document_upload",
             name: "Upload Document",
             icon: <Upload className="w-5 h-5" />,
-            description: "Upload and process legal documents for analysis",
+            description: "Allows users to upload a document (PDF or image) for analysis. The document's content is extracted and stored for later use. This endpoint returns the extracted content along with a title and the content of the document.",
             method: "POST",
             path: "/document",
             request: {
@@ -100,7 +100,7 @@ export default function Home() {
             id: "document_query",
             name: "Query Document",
             icon: <Search className="w-5 h-5" />,
-            description: "Ask questions about previously uploaded documents",
+            description: "Allows users to ask questions about a previously uploaded document. The assistant responds to the user's query based on the document context.",
             method: "POST",
             path: "/query",
             request: {
@@ -122,7 +122,7 @@ export default function Home() {
             id: "drafting_questions",
             name: "Questions",
             icon: <MessageSquare className="w-5 h-5" />,
-            description: "Generate key legal questions for document drafting",
+            description: "Generates a set of key legal questions based on the user input and the relevant country. This helps in drafting legal documents by first identifying the crucial questions.",
             method: "POST",
             path: "/drafting/questions",
             request: {
@@ -149,7 +149,7 @@ export default function Home() {
             id: "drafting_document",
             name: "Document",
             icon: <Pencil className="w-5 h-5" />,
-            description: "Generate legal document based on answers",
+            description: "Generates a legal document based on the answers to the questions generated. The result is provided in both PDF and DOCX formats as base64-encoded strings.",
             method: "POST",
             path: "/drafting/document",
             request: {
