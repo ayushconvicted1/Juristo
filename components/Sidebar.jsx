@@ -7,6 +7,7 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  Code,
 } from "lucide-react";
 import {
   Dialog,
@@ -74,6 +75,11 @@ export default function Sidebar() {
         setSelectedChat(newChat);
       },
       isActive: true,
+    },
+    {
+      icon: Code,
+      label: "API",
+      onClick: () => router.push("/apidocs"),
     },
     {
       icon: Settings,
