@@ -10,6 +10,16 @@ import Sidebar from "@/components/Sidebar";
 export default function Home() {
     const [activeTab, setActiveTab] = useState("connection");
 
+    const getMethodColor = (method) => {
+        switch (method) {
+            case 'GET': return 'text-green-600';
+            case 'POST': return 'text-yellow-600';
+            case 'PUT': return 'text-orange-600';
+            case 'DELETE': return 'text-red-600';
+            default: return 'text-gray-600';
+        }
+    };
+
     const endpoints = [
         {
             id: "connection",
@@ -109,10 +119,37 @@ export default function Home() {
             curl: 'curl -X POST https://api.juristo.com/query \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: 3e8477c8c3dbc7b0fa05190908120bf123bbae3edb8aa21275e35a86eefac5c" \\\n  -d \'{\n    "documentId": "unique_document_id",\n    "question": "What is the legal process for property dispute resolution in India?"\n  }\''
         },
         {
-            id: "drafting",
-            name: "Drafting",
+            id: "drafting_questions",
+            name: "Questions",
+            icon: <MessageSquare className="w-5 h-5" />,
+            description: "Generate key legal questions for document drafting",
+            method: "POST",
+            path: "/drafting/questions",
+            request: {
+                headers: {
+                    "x-api-key": "API key for authentication (required)",
+                    "Content-Type": "application/json"
+                },
+                body: {
+                    userInput: "I want a document to finalise renting a flat to two people",
+                    country: "India"
+                }
+            },
+            response: {
+                questions: [
+                    "1. Have both the parties agreed on the rental amount for the flat...",
+                    "2. Does the agreement specify the duration of the lease and...",
+                    "3. Are the responsibilities of both the tenant and the...",
+                    "4. Does the document outline the conditions under..."
+                ]
+            },
+            curl: 'curl -X POST http://localhost:5001/drafting/questions \\\n  -H "Content-Type: application/json" \\\n  -H "x-api-key: 3e8477c8c3dbc7b0fa05190908120bf123bbae3edb8aa21275e35a86eefac5c" \\\n  -d \'{\n    "userInput": "I want a document to finalise renting a flat to two people",\n    "country": "India"\n  }\''
+        },
+        {
+            id: "drafting_document",
+            name: "Document",
             icon: <Pencil className="w-5 h-5" />,
-            description: "Generate legal document drafts",
+            description: "Generate legal document based on answers",
             method: "POST",
             path: "/drafting/document",
             request: {
@@ -139,24 +176,26 @@ export default function Home() {
             <div className="w-[280px] flex-shrink-0">
                 <Sidebar />
             </div>
-            
+
             <div className="flex-1 overflow-y-auto">
                 <div className="container py-8 px-4">
                     <div className="max-w-5xl mx-auto">
                         <div className="mb-8 text-center">
-                            <h1 className="text-4xl font-bold mb-4">Juristo API Documentation</h1>
+                            <h1 className="text-4xl font-bold mb-4">
+                                Juristo API Documentation
+                            </h1>
                             <p className="text-lg text-muted-foreground">
-                                Complete guide to integrating with the Juristo Legal AI Assistant
+                                Complete guide to integrating with the <span className="text-blue-600">Juristo Legal AI Assistant</span>
                             </p>
                         </div>
 
                         <Tabs defaultValue="connection" className="w-full" onValueChange={setActiveTab}>
-                            <TabsList className="grid grid-cols-3 lg:grid-cols-5 w-full">
+                            <TabsList className="grid grid-cols-5 lg:grid-cols-6 w-full mb-8">
                                 {endpoints.map((endpoint) => (
                                     <TabsTrigger
                                         key={endpoint.id}
                                         value={endpoint.id}
-                                        className="flex items-center gap-2"
+                                        className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
                                     >
                                         {endpoint.icon}
                                         <span className="hidden sm:inline">{endpoint.name}</span>
@@ -167,12 +206,13 @@ export default function Home() {
                             {endpoints.map((endpoint) => (
                                 <TabsContent key={endpoint.id} value={endpoint.id}>
                                     <Card>
-                                        <CardHeader>
+                                        <CardHeader className="border-b">
                                             <div className="flex items-center gap-3">
                                                 {endpoint.icon}
                                                 <div>
-                                                    <CardTitle className="text-2xl">
-                                                        {endpoint.method} {endpoint.path}
+                                                    <CardTitle className="text-2xl flex items-center gap-2">
+                                                        <span className={getMethodColor(endpoint.method)}>{endpoint.method}</span>
+                                                        <span className="text-muted-foreground">{endpoint.path}</span>
                                                     </CardTitle>
                                                     <CardDescription className="text-lg mt-1">
                                                         {endpoint.description}
@@ -180,11 +220,11 @@ export default function Home() {
                                                 </div>
                                             </div>
                                         </CardHeader>
-                                        <CardContent>
+                                        <CardContent className="pt-6">
                                             <div className="grid gap-6">
                                                 <div>
                                                     <h3 className="text-lg font-semibold mb-2">Request</h3>
-                                                    <Card>
+                                                    <Card className="border-blue-50">
                                                         <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                                                             <pre className="text-sm">
                                                                 {JSON.stringify(endpoint.request, null, 2)}
@@ -195,7 +235,7 @@ export default function Home() {
 
                                                 <div>
                                                     <h3 className="text-lg font-semibold mb-2">Response</h3>
-                                                    <Card>
+                                                    <Card className="border-blue-50">
                                                         <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                                                             <pre className="text-sm">
                                                                 {JSON.stringify(endpoint.response, null, 2)}
@@ -206,7 +246,7 @@ export default function Home() {
 
                                                 <div>
                                                     <h3 className="text-lg font-semibold mb-2">Example Request</h3>
-                                                    <Card>
+                                                    <Card className="border-blue-50">
                                                         <ScrollArea className="h-[200px] w-full rounded-md border p-4">
                                                             <pre className="text-sm whitespace-pre-wrap">
                                                                 {endpoint.curl}
