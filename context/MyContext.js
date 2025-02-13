@@ -51,7 +51,6 @@ const MyProvider = ({ children }) => {
               console.error("Error initializing auth:", error);
               localStorage.removeItem("token");
               localStorage.removeItem("user");
-              router.push("/login");
             }
           }
         } else {
