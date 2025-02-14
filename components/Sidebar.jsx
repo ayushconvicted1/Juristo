@@ -1,4 +1,5 @@
 "use client";
+import { usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -7,6 +8,7 @@ import {
   Settings,
   HelpCircle,
   LogOut,
+  Code,
 } from "lucide-react";
 import {
   Dialog,
@@ -29,6 +31,7 @@ import { cn } from "@/lib/utils";
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     user,
     setSelectedChat,
@@ -57,12 +60,17 @@ export default function Sidebar() {
     {
       icon: MessageSquarePlus,
       label: "Start new chat",
-      onClick: () => setSelectedChat(null),
+      onClick: () => {
+        router.push("/");
+        setSelectedChat(null);
+      },
+      isActive: pathname === "/" && !selectedChat,
     },
     {
       icon: MessageSquare,
       label: "AI chat",
       onClick: () => {
+        router.push("/");
         const newChat = {
           id: Date.now().toString(),
           title: "New AI Chat",
@@ -73,17 +81,25 @@ export default function Sidebar() {
         };
         setSelectedChat(newChat);
       },
-      isActive: true,
+      isActive: pathname === "/" && selectedChat,
+    },
+    {
+      icon: Code,
+      label: "Developer API",
+      onClick: () => router.push("/apidocs"),
+      isActive: pathname === "/apidocs",
     },
     {
       icon: Settings,
       label: "Settings",
       onClick: () => setShowSettings(true),
+      isActive: pathname === "/settings",
     },
     {
       icon: HelpCircle,
       label: "Updates and FAQ",
       onClick: () => setShowHelp(true),
+      isActive: false,
     },
   ];
 
@@ -118,7 +134,7 @@ export default function Sidebar() {
             onClick={item.onClick}
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-accent",
-              item.isActive && "text-blue-600"
+              item.isActive && "bg-accent text-blue-600"
             )}
           >
             <item.icon className="h-4 w-4" />
