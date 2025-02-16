@@ -26,9 +26,14 @@ import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useContext } from "react";
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import axios from "axios";
 
 export default function Sidebar() {
   const router = useRouter();
+  const pathname = usePathname();
   const {
     user,
     setSelectedChat,
