@@ -20,7 +20,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
-  const { user, loading, setUser } = useContext(MyContext); // Ensure `setUser` is available in context
+  const { user, loading, setUser } = useContext(MyContext); // Ensure setUser is available in context
   const { theme, setTheme } = useTheme();
   const router = useRouter();
 
@@ -51,6 +51,30 @@ export default function Dashboard() {
   const goToChats = () => {
     router.push("/"); // Adjust if your chats page is at a different route
   };
+
+  // Mapping active plan details
+  const planDetails = {
+    basic: {
+      name: "Basic",
+      price: "Free",
+      description: "Ideal for individuals and small businesses.",
+    },
+    super: {
+      name: "Super",
+      price: "₹199/month",
+      description: "Perfect for growing businesses and startups.",
+    },
+    advance: {
+      name: "Advance",
+      price: "₹399/month",
+      description: "Best for enterprises requiring robust solutions.",
+    },
+  };
+
+  // Get current plan details (default to basic if none)
+  const currentPlan = user?.plan
+    ? planDetails[user.plan.toLowerCase()]
+    : planDetails.basic;
 
   if (loading) {
     return (
@@ -105,7 +129,8 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Updated grid to 3 columns on medium screens */}
+      <main className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Profile Card */}
         <Card className="dark:bg-gray-800 dark:border-gray-700">
           <CardHeader className="pb-4">
@@ -161,6 +186,25 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Active Plan Card */}
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <CardHeader className="pb-4">
+            <h2 className="text-xl font-semibold flex items-center gap-2 dark:text-gray-200">
+              <Rocket className="h-5 w-5 text-purple-500" />
+              Active Plan
+            </h2>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-lg font-medium dark:text-gray-200">
+              {currentPlan.name}{" "}
+              {currentPlan.price !== "Free" && `- ${currentPlan.price}`}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {currentPlan.description}
+            </p>
           </CardContent>
         </Card>
 

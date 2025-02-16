@@ -1,4 +1,7 @@
 "use client";
+
+import { useState, useContext } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -21,7 +24,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useContext, useState } from "react";
 import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -29,29 +31,43 @@ import { cn } from "@/lib/utils";
 
 export default function Sidebar() {
   const router = useRouter();
-  const {
-    user,
-    setSelectedChat,
-    selectedChat,
-    chats,
-    setChats,
-    setUser,
-    setMessages,
-  } = useContext(MyContext);
+  const { user, setSelectedChat, setUser, setMessages } = useContext(MyContext);
+
+  // State for dialogs and payment
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleLogout = async () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      // Clear any other stored data
-      localStorage.clear();
-    }
-    router.push("/login");
-    setUser(null);
-    setMessages([]);
-    setSelectedChat(null);
-  };
+  // State for billing type (monthly vs annually)
+  const [billPlan, setBillPlan] = useState("monthly");
+  const isMonthly = billPlan === "monthly";
+
+  // Pricing plans (updated pricing):
+  // Basic: Free, Super: ₹199/month, Advance: ₹399/month
+  const plans = [
+    {
+      name: "Basic",
+      monthly: 0,
+      annually: 0,
+      description: "Ideal for individuals and small businesses.",
+      features: ["Basic support", "Limited access", "Essential tools"],
+    },
+    {
+      name: "Super",
+      monthly: 199,
+      annually: 199,
+      description: "Perfect for growing businesses and startups.",
+      features: ["Priority support", "Extended access", "Advanced analytics"],
+    },
+    {
+      name: "Advance",
+      monthly: 399,
+      annually: 399,
+      description: "Best for enterprises requiring robust solutions.",
+      features: ["24/7 support", "Full access", "Custom integrations"],
+    },
+  ];
 
   const navItems = [
     {
@@ -87,8 +103,35 @@ export default function Sidebar() {
     },
   ];
 
-  const handleclick = () => {
-    router.push("/");
+  const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.clear();
+    }
+    router.push("/login");
+    setUser(null);
+    setMessages([]);
+    setSelectedChat(null);
+  };
+
+  const handleBuyNow = async (plan) => {
+    setIsProcessing(true);
+    try {
+      const response = await axios.post("/api/cashfree/initiate", {
+        plan,
+        userId: user?._id, // ensure you're passing the user's _id from context
+      });
+      const { payment_link, message } = response.data;
+      if (payment_link) {
+        window.location.href = payment_link;
+      } else {
+        alert(message || "Payment processed. Your plan has been updated.");
+      }
+    } catch (error) {
+      console.error("Payment initiation failed", error);
+      alert("Payment initiation failed. Please try again.");
+    }
+    setIsProcessing(false);
   };
 
   return (
@@ -104,7 +147,7 @@ export default function Sidebar() {
         </div>
         <button
           className="text-xl font-medium tracking-tight bg-transparent shadow-none"
-          onClick={handleclick}
+          onClick={() => router.push("/")}
         >
           Juristo
         </button>
@@ -131,22 +174,25 @@ export default function Sidebar() {
       <div className="px-4 mt-auto">
         <Card className="overflow-hidden">
           <div className="bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white">
-            <h3 className="font-semibold">Go Premium Now!</h3>
+            <h3 className="font-semibold">
+              {user?.plan
+                ? "Your Current Plan: " +
+                  user.plan.charAt(0).toUpperCase() +
+                  user.plan.slice(1)
+                : "Upgrade Your Plan"}
+            </h3>
             <p className="text-xs text-white/80">
-              Get your legal work easily done
+              {user?.plan === "basic"
+                ? "You are on the free Basic plan."
+                : "Enjoy premium features with your plan."}
             </p>
             <div className="mt-3 flex items-center justify-between">
-              <span className="font-semibold">
-                $70{" "}
-                <span className="text-xs font-normal text-white/80">
-                  /month
-                </span>
-              </span>
               <Button
                 size="sm"
                 className="h-7 bg-white text-[#0A2540] hover:bg-white/90"
+                onClick={() => setShowPlanDialog(true)}
               >
-                Get
+                {user?.plan === "basic" ? "Upgrade" : "Change Plan"}
               </Button>
             </div>
           </div>
@@ -168,7 +214,6 @@ export default function Sidebar() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[200px]">
-              {/* Link to Dashboard */}
               <DropdownMenuItem onClick={() => router.push("/dashboard")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Dashboard
@@ -230,6 +275,85 @@ export default function Sidebar() {
                 <li>How does the AI assistant work?</li>
               </ul>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Premium Plans Modal */}
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        {/* Limit width and height to avoid overflow */}
+        <DialogContent className="max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Select a Premium Plan</DialogTitle>
+          </DialogHeader>
+
+          {/* Cards Container */}
+          <div className="grid grid-cols-1 gap-8 mt-8 md:grid-cols-3">
+            {plans.map((plan) => {
+              const price = isMonthly ? plan.monthly : plan.annually;
+              // Disable the button if the user's active plan matches this plan.
+              const isActive =
+                user?.plan?.toLowerCase() === plan.name.toLowerCase();
+              return (
+                <div
+                  key={plan.name}
+                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm bg-white"
+                >
+                  {/* Price */}
+                  <div className="text-4xl font-semibold text-indigo-600">
+                    {price === 0 ? "Free" : `₹${price}`}
+                    <span className="ml-1 text-lg font-normal text-gray-500">
+                      {price === 0 ? "" : `/${isMonthly ? "month" : "year"}`}
+                    </span>
+                  </div>
+
+                  {/* Plan Name & Description */}
+                  <div className="mt-2 border-b pb-4">
+                    <h3 className="text-2xl font-semibold">{plan.name}</h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      {plan.description}
+                    </p>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="mt-4 space-y-2 flex-1">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-center text-sm">
+                        <svg
+                          className="w-5 h-5 text-green-500 flex-shrink-0"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293A1 1 0 106.293 10.707l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        <span className="ml-2">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Buy Now / Current Button */}
+                  <div className="pt-4">
+                    {isActive ? (
+                      <Button className="w-full" disabled>
+                        Current Plan
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full"
+                        onClick={() => handleBuyNow(plan.name.toLowerCase())}
+                        disabled={isProcessing}
+                      >
+                        {isProcessing ? "Processing..." : `Get ${plan.name}`}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
