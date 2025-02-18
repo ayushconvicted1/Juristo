@@ -319,7 +319,7 @@ export default function Sidebar() {
               return (
                 <div
                   key={plan.name}
-                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm bg-white"
+                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm "
                 >
                   {/* Price */}
                   <div className="text-4xl font-semibold text-indigo-600">
