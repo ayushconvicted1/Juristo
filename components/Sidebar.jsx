@@ -8,6 +8,9 @@ import {
   HelpCircle,
   LogOut,
   Code,
+  LayoutDashboardIcon,
+  Mail,
+  FileQuestion,
 } from "lucide-react";
 import {
   Dialog,
@@ -26,10 +29,10 @@ import { MyContext } from "@/context/MyContext";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useContext } from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { usePathname } from "next/navigation";
 import axios from "axios";
+import Link from "next/link";
 
 export default function Sidebar() {
   const router = useRouter();
@@ -47,6 +50,8 @@ export default function Sidebar() {
   const [showHelp, setShowHelp] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [coupon, setCoupon] = useState("");
+  const [couponMessage, setCouponMessage] = useState("");
 
   // State for billing type (monthly vs annually)
   const [billPlan, setBillPlan] = useState("monthly");
@@ -78,6 +83,72 @@ export default function Sidebar() {
     },
   ];
 
+  // Newsletter subscription handlers
+  const handleNewsletterSubscribe = () => {
+    alert("Subscribed to newsletter!");
+    // Update user state to reflect subscription
+    setUser({ ...user, newsletterSubscribed: true });
+  };
+
+  const handleNewsletterOptOut = () => {
+    alert("You've opted out of the newsletter.");
+    // Update user state to reflect opt out
+    setUser({ ...user, newsletterSubscribed: false });
+  };
+
+  const handleLogout = async () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.clear();
+    }
+    router.push("/login");
+    setUser(null);
+    setMessages([]);
+    setSelectedChat(null);
+  };
+
+  const handleBuyNow = async (plan) => {
+    setIsProcessing(true);
+    setCouponMessage(""); // clear any previous messages
+    try {
+      const response = await axios.post("/api/cashfree/initiate", {
+        plan,
+        coupon,
+        userId: user?._id,
+      });
+      const { payment_link, message } = response.data;
+      if (payment_link) {
+        // Redirect to payment if Cashfree provides a payment link.
+        window.location.href = payment_link;
+      } else {
+        // If no payment link but a message is returned, show it as a success message.
+        setCouponMessage(
+          message || "Payment processed. Your plan has been updated."
+        );
+      }
+    } catch (error) {
+      console.error("Payment initiation failed", error);
+      // Display backend error (or fallback error message)
+      setCouponMessage(
+        error.response?.data?.error ||
+          "Payment initiation failed. Please try again."
+      );
+    }
+    setIsProcessing(false);
+  };
+
+  // API key management functions
+  const generateApiKey = () => {
+    // Implement your API key generation logic here
+    alert("API Key generated!");
+  };
+
+  const regenerateApiKey = () => {
+    // Implement your API key regeneration logic here
+    alert("API Key regenerated!");
+  };
+
+  // Navigation items array. Conditionally add the newsletter subscription tab
   const navItems = [
     {
       icon: MessageSquarePlus,
@@ -87,23 +158,6 @@ export default function Sidebar() {
         setSelectedChat(null);
       },
       isActive: pathname === "/" && !selectedChat,
-    },
-    {
-      icon: MessageSquare,
-      label: "AI chat",
-      onClick: () => {
-        router.push("/");
-        const newChat = {
-          id: Date.now().toString(),
-          title: "New AI Chat",
-          description: "Start a new conversation with AI",
-          time: new Date().toLocaleTimeString(),
-          isNew: true,
-          messages: [],
-        };
-        setSelectedChat(newChat);
-      },
-      isActive: pathname === "/" && selectedChat,
     },
     {
       icon: Code,
@@ -119,42 +173,28 @@ export default function Sidebar() {
     },
     {
       icon: HelpCircle,
-      label: "Updates and FAQ",
+      label: "Updates",
       onClick: () => setShowHelp(true),
-      isActive: false,
+      isActive: pathname === "/updates",
     },
+    {
+      icon: FileQuestion,
+      label: "FAQs",
+      onClick: () => router.push("/faq"),
+      isActive: pathname === "/faq",
+    },
+    // Only show the newsletter subscription tab if the user hasn't subscribed
+    ...(!user?.newsletterSubscribed
+      ? [
+          {
+            icon: Mail,
+            label: "Subscribe to Newsletter",
+            onClick: handleNewsletterSubscribe,
+            isActive: false,
+          },
+        ]
+      : []),
   ];
-
-  const handleLogout = async () => {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      localStorage.clear();
-    }
-    router.push("/login");
-    setUser(null);
-    setMessages([]);
-    setSelectedChat(null);
-  };
-
-  const handleBuyNow = async (plan) => {
-    setIsProcessing(true);
-    try {
-      const response = await axios.post("/api/cashfree/initiate", {
-        plan,
-        userId: user?._id, // ensure you're passing the user's _id from context
-      });
-      const { payment_link, message } = response.data;
-      if (payment_link) {
-        window.location.href = payment_link;
-      } else {
-        alert(message || "Payment processed. Your plan has been updated.");
-      }
-    } catch (error) {
-      console.error("Payment initiation failed", error);
-      alert("Payment initiation failed. Please try again.");
-    }
-    setIsProcessing(false);
-  };
 
   return (
     <div className="flex h-full w-[280px] flex-col border-r py-4">
@@ -190,6 +230,13 @@ export default function Sidebar() {
             {item.label}
           </button>
         ))}
+        <Link
+          href="/dashboard"
+          className="flex w-full items-center gap-2 rounded-lg px-0 py-2 text-[15px] font-medium transition-colors hover:bg-accent m-3"
+        >
+          <LayoutDashboardIcon className="h-4 w-4" />
+          <span>Dashboard</span>
+        </Link>
       </div>
 
       {/* Premium Section */}
@@ -217,6 +264,7 @@ export default function Sidebar() {
                 {user?.plan === "basic" ? "Upgrade" : "Change Plan"}
               </Button>
             </div>
+            <p></p>
           </div>
         </Card>
 
@@ -236,10 +284,6 @@ export default function Sidebar() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[200px]">
-              <DropdownMenuItem onClick={() => router.push("/dashboard")}>
-                <Settings className="mr-2 h-4 w-4" />
-                Dashboard
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -265,13 +309,39 @@ export default function Sidebar() {
             <DialogTitle>Settings</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4">
-            <div className="grid gap-2">
-              <h3 className="font-medium">Settings will be added soon</h3>
-            </div>
+            {/* Conditionally render API key management if the user's plan is "super" or "premium" */}
+            {(user?.plan === "super" || user?.plan === "premium") && (
+              <div className="grid gap-2">
+                <h3 className="font-medium">API Key Management</h3>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={generateApiKey}>
+                    Generate API Key
+                  </Button>
+                  <Button variant="outline" onClick={regenerateApiKey}>
+                    Regenerate API Key
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="grid gap-2">
               <h3 className="font-medium">Notifications</h3>
               <Button variant="outline">Manage Notifications</Button>
             </div>
+            <div className="grid gap-2">
+              <h3 className="font-medium">Other Settings</h3>
+              <p className="text-sm text-muted-foreground">
+                Additional settings can be added here.
+              </p>
+            </div>
+            {/* If user is subscribed to the newsletter, show option to opt out */}
+            {user?.newsletterSubscribed && (
+              <div className="grid gap-2">
+                <h3 className="font-medium">Newsletter Subscription</h3>
+                <Button variant="outline" onClick={handleNewsletterOptOut}>
+                  Opt Out
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -280,7 +350,7 @@ export default function Sidebar() {
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Updates and FAQ</DialogTitle>
+            <DialogTitle>Updates</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="rounded-lg border p-4">
@@ -289,37 +359,57 @@ export default function Sidebar() {
                 Version 2.0 is now available with improved AI capabilities
               </p>
             </div>
-            <div className="rounded-lg border p-4">
-              <h3 className="font-medium">FAQ</h3>
-              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-                <li>How do I start a new chat?</li>
-                <li>What are the premium features?</li>
-                <li>How does the AI assistant work?</li>
-              </ul>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Premium Plans Modal */}
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        {/* Limit width and height to avoid overflow */}
         <DialogContent className="max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Select a Premium Plan</DialogTitle>
           </DialogHeader>
 
-          {/* Cards Container */}
+          {/* Coupon Input Field with Message */}
+          <div className="mb-4 px-4">
+            <label
+              htmlFor="coupon"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Coupon Code
+            </label>
+            <input
+              type="text"
+              id="coupon"
+              value={coupon}
+              onChange={(e) => setCoupon(e.target.value)}
+              placeholder="Enter coupon code"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+            {couponMessage && (
+              <p
+                className={`mt-2 text-sm ${
+                  couponMessage.toLowerCase().includes("invalid") ||
+                  couponMessage.toLowerCase().includes("error")
+                    ? "text-red-500"
+                    : "text-green-500"
+                }`}
+              >
+                {couponMessage}
+              </p>
+            )}
+          </div>
+
+          {/* Pricing Cards Container */}
           <div className="grid grid-cols-1 gap-8 mt-8 md:grid-cols-3">
             {plans.map((plan) => {
               const price = isMonthly ? plan.monthly : plan.annually;
-              // Disable the button if the user's active plan matches this plan.
               const isActive =
                 user?.plan?.toLowerCase() === plan.name.toLowerCase();
               return (
                 <div
                   key={plan.name}
-                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm "
+                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm"
                 >
                   {/* Price */}
                   <div className="text-4xl font-semibold text-indigo-600">

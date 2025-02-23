@@ -32,17 +32,53 @@ const ChatList = ({ currentTab }) => {
   const [pinnedChats, setPinnedChats] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Returns the proper fetch URL based on the currentTab
+  const getFetchUrl = () => {
+    if (!user?._id) return "";
+    if (currentTab === "drafting") {
+      const url = `/api/draftchats/user/${user._id}`;
+      console.log("Fetching draft chats from local API:", url);
+      return url;
+    } else if (currentTab === "analysis") {
+      const url = `https://juristo-backend-azure.vercel.app/api/image-chat/${user._id}`;
+      console.log("Fetching analysis chats from external API:", url);
+      return url;
+    } else {
+      const url = `https://juristo-backend-azure.vercel.app/api/chat/${user._id}`;
+      console.log("Fetching chats from external API:", url);
+      return url;
+    }
+  };
+
+  // Returns the proper delete URL based on the currentTab
+  const getDeleteUrl = (chatId) => {
+    if (currentTab === "drafting") {
+      const url = `/api/draftchats/chat/${chatId}`;
+      console.log("Deleting draft chat from local API:", url);
+      return url;
+    } else if (currentTab === "analysis") {
+      const url = `https://juristo-backend-azure.vercel.app/api/image-chat/${chatId}`;
+      console.log("Deleting analysis chat from external API:", url);
+      return url;
+    } else {
+      const url = `https://juristo-backend-azure.vercel.app/api/chat/${chatId}`;
+      console.log("Deleting chat from external API:", url);
+      return url;
+    }
+  };
+
   useEffect(() => {
     const fetchChats = async () => {
-      // Use user._id as the unique identifier
-      if (!user?._id) return;
+      if (!user?._id) {
+        console.log("User ID not found, aborting fetch.");
+        return;
+      }
       setIsLoading(true);
       try {
-        const data = await fetch(
-          `https://juristo-backend-azure.vercel.app/api/${
-            currentTab === "analysis" ? "image-chat" : "chat"
-          }/${user._id}`
-        ).then((res) => res.json());
+        const url = getFetchUrl();
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log("Fetched chats data:", data);
         setChats(data.reverse());
       } catch (error) {
         console.error("Error fetching chats:", error);
@@ -58,6 +94,26 @@ const ChatList = ({ currentTab }) => {
     fetchChats();
   }, [user, currentTab, setChats, toast]);
 
+  // Function to open a chat. For drafting chats, it fetches the full conversation.
+  const openChat = async (chat) => {
+    console.log("Opening chat:", chat);
+    if (currentTab === "drafting") {
+      try {
+        // Fetch full conversation from the local API
+        const response = await fetch(`/api/draftchats/chat/${chat.chatId}`);
+        const data = await response.json();
+        console.log("Full draft chat details:", data);
+        setSelectedChat(data);
+      } catch (error) {
+        console.error("Error fetching full draft chat:", error);
+        // Fallback: use the chat object from the list
+        setSelectedChat(chat);
+      }
+    } else {
+      setSelectedChat(chat);
+    }
+  };
+
   const deleteChat = async (chatId) => {
     setChatToDelete(chatId);
     setShowDeleteConfirm(true);
@@ -65,18 +121,11 @@ const ChatList = ({ currentTab }) => {
 
   const confirmDeleteChat = async () => {
     if (!chatToDelete) return;
-
     setIsLoading(true);
     try {
-      const response = await fetch(
-        `https://juristo-backend-azure.vercel.app/api/${
-          currentTab === "analysis" ? "image-chat" : "chat"
-        }/${chatToDelete}`,
-        {
-          method: "DELETE",
-        }
-      );
-
+      const url = getDeleteUrl(chatToDelete);
+      const response = await fetch(url, { method: "DELETE" });
+      console.log("Delete response:", response);
       if (response.ok) {
         setChats((prevChats) =>
           prevChats.filter((chat) => chat.chatId !== chatToDelete)
@@ -108,14 +157,17 @@ const ChatList = ({ currentTab }) => {
   const pinChat = (chatId) => {
     setPinnedChats((prev) => {
       if (prev.includes(chatId)) {
+        console.log("Unpinning chat:", chatId);
         return prev.filter((id) => id !== chatId);
       } else {
+        console.log("Pinning chat:", chatId);
         return [chatId, ...prev];
       }
     });
   };
 
   const clearAllChats = () => {
+    console.log("Clearing all chats.");
     setChats([]);
     setSelectedChat(null);
     toast({
@@ -182,7 +234,10 @@ const ChatList = ({ currentTab }) => {
                       ? "bg-muted"
                       : "bg-card"
                   }`}
-                  onClick={() => setSelectedChat(chat)}
+                  onClick={() => {
+                    console.log("Chat selected:", chat);
+                    openChat(chat);
+                  }}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium">{chat.title}</h3>
@@ -224,7 +279,10 @@ const ChatList = ({ currentTab }) => {
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => setShowClearConfirm(true)}
+            onClick={() => {
+              console.log("Clear all chats clicked");
+              setShowClearConfirm(true);
+            }}
           >
             Clear All Chats
           </Button>

@@ -33,7 +33,7 @@ import { sendUsageNotificationEmail } from "../../lib/mails/emailTem.js";
 
 const ChatBot = () => {
   const { toast } = useToast();
-  const { user } = useContext(MyContext);
+  const { user, setChats, chats } = useContext(MyContext);
   const chatEndRef = useRef(null);
 
   // Local state variables
@@ -50,6 +50,7 @@ const ChatBot = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(3);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [draftChatId, setDraftChatId] = useState(null);
 
   // Verify that the user data is present
   useEffect(() => {
@@ -71,6 +72,51 @@ const ChatBot = () => {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  /**
+   * Saves the current message as a draft chat.
+   * When newChat is true, it creates a new draft chat (and updates the draftChatId and chat list);
+   * otherwise, it updates the existing draft chat.
+   */
+  const saveDraftChat = async (message, newChat = false) => {
+    if (!user?._id) return;
+    try {
+      console.log("Saving draft chat:", {
+        newChat,
+        currentDraftId: draftChatId,
+        message,
+      });
+      const response = await fetch("/api/draftchats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user._id,
+          message,
+          newChat,
+          chatId: newChat ? null : draftChatId,
+          country: user.country?.label || "Unknown",
+          language: user.language?.label || "English",
+        }),
+      });
+      const data = await response.json();
+      console.log("Draft chat saved:", data);
+      if (newChat && data.chat) {
+        setDraftChatId(data.chat.chatId);
+        // Update the shared chat list immediately (prepend new draft)
+        setChats((prevChats) => [data.chat, ...prevChats]);
+      } else if (!newChat && data.chat) {
+        // Optionally update the existing chat in context if needed
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.chatId === data.chat.chatId ? data.chat : chat
+          )
+        );
+      }
+      return data.chat;
+    } catch (error) {
+      console.error("Error saving draft chat:", error);
+    }
+  };
 
   /**
    * Update the draft count by calling the server endpoint.
@@ -191,7 +237,7 @@ const ChatBot = () => {
   };
 
   // Submit an answer for the current question
-  const handleAnswerSubmit = () => {
+  const handleAnswerSubmit = async () => {
     if (!currentAnswer.trim()) {
       toast({
         title: "Answer Required",
@@ -212,6 +258,10 @@ const ChatBot = () => {
       ...prev,
       { role: "user", content: currentAnswer.trim(), timestamp: new Date() },
     ]);
+    // If in drafting mode, update the draft chat with the new answer
+    if (currentTab === "drafting") {
+      await saveDraftChat(currentAnswer, false);
+    }
     setCurrentAnswer("");
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -340,6 +390,13 @@ const ChatBot = () => {
       ...prev,
       { role: "user", content: userInput, timestamp: new Date() },
     ]);
+    // If in drafting mode, store the initial draft chat message
+    if (currentTab === "drafting") {
+      const chat = await saveDraftChat(userInput, true);
+      if (chat) {
+        console.log("Initial draft chat stored:", chat);
+      }
+    }
     await fetchQuestions();
   };
 
@@ -538,6 +595,14 @@ const ChatBot = () => {
       </ScrollArea>
 
       <div className="sticky bottom-0 p-4">
+        {/* Only show the image when there are no chat messages */}
+        {messages.length === 0 && (
+          <img
+            src="https://img.freepik.com/free-vector/notary-service-online-service-platform-professional-lawyer-signing-legalizing-paper-document-online-information-isolated-flat-vector-illustration_613284-1891.jpg"
+            alt="Notary Service Illustration"
+            className="w-40 h-40 object-contain flex justify-center items-center mx-auto"
+          />
+        )}
         <div className="max-w-4xl mx-auto flex gap-4">
           <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
             <Input

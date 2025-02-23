@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import axios from "axios";
 import connectDB from "../../../../lib/connectDB/db";
 import User from "../../../../lib/db/models/User";
+import Coupon from "../../../../lib/db/models/Coupon.js"; // Import your Coupon model
 
 export async function POST(req) {
   try {
@@ -9,13 +10,15 @@ export async function POST(req) {
     await connectDB();
     console.log("Initiate Payment: Connected to DB");
 
-    // Retrieve plan and userId from the request body
-    const { plan, userId } = await req.json();
+    // Retrieve plan, userId, and coupon from the request body
+    const { plan, userId, coupon } = await req.json();
     console.log(
       "Initiate Payment: Received plan =",
       plan,
-      "and userId =",
-      userId
+      "userId =",
+      userId,
+      "coupon =",
+      coupon
     );
 
     if (!userId) {
@@ -48,8 +51,54 @@ export async function POST(req) {
       );
     }
 
-    const { amount, description } = plans[plan];
+    let { amount, description } = plans[plan];
     console.log("Initiate Payment: Plan", plan, "with amount", amount);
+
+    // If a coupon is provided, validate it from the DB.
+    if (coupon) {
+      // Convert coupon to uppercase for matching, assuming coupon titles are stored in uppercase.
+      const couponCode = coupon.toUpperCase();
+      const couponDoc = await Coupon.findOne({ couponTitle: couponCode });
+      if (!couponDoc || couponDoc.status !== "Active") {
+        console.log(
+          "Initiate Payment: Invalid or inactive coupon code provided:",
+          coupon
+        );
+        return NextResponse.json(
+          { error: "Invalid coupon code" },
+          { status: 400 }
+        );
+      }
+
+      // Check if the order meets the minimum price required for this coupon
+      if (amount < couponDoc.minPrice) {
+        console.log(
+          "Initiate Payment: Coupon not applicable, order amount is less than minimum required:",
+          amount,
+          couponDoc.minPrice
+        );
+        return NextResponse.json(
+          {
+            error: `Coupon not applicable for orders below ₹${couponDoc.minPrice}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Apply discount from the coupon document
+      const discountPercentage = couponDoc.discount; // e.g., 45 for a 45% discount
+      const discountAmount = amount * (discountPercentage / 100);
+      const newAmount = parseFloat((amount - discountAmount).toFixed(2));
+      console.log(
+        `Initiate Payment: Coupon ${couponCode} applied, ${discountPercentage}% discount. Original amount: ${amount}, new amount: ${newAmount}`
+      );
+      amount = newAmount;
+      description =
+        description + ` (${discountPercentage}% off coupon applied)`;
+
+      // Optionally, update coupon usage (consider updating after payment confirmation)
+      // await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { timesUsed: 1 } });
+    }
 
     // If free plan is selected, update the user immediately.
     if (amount === 0) {
@@ -61,7 +110,7 @@ export async function POST(req) {
       });
     }
 
-    // Place return_url inside order_meta instead of top-level.
+    // Place return_url inside order_meta
     const return_url =
       process.env.RETURN_URL || "https://juristo-prod.vercel.app/dashboard";
     console.log(
@@ -75,9 +124,7 @@ export async function POST(req) {
       order_currency: "INR",
       order_note: description,
       order_meta: {
-        return_url, // This will tell Cashfree where to redirect after payment
-        // Optionally, you can add a notify_url if needed
-        // notify_url: process.env.NOTIFY_URL || return_url,
+        return_url, // Cashfree will redirect here after payment
       },
       customer_details: {
         customer_id: user._id.toString(),

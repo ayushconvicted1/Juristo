@@ -1,9 +1,8 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { MyContext } from "@/context/MyContext";
-import { format, isValid } from "date-fns";
+import { format } from "date-fns";
 import {
   ArrowUpRight,
   Copy,
@@ -14,6 +13,7 @@ import {
   File,
   X,
   ImageIcon,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,37 @@ const ChatBoxForDocs = () => {
     useContext(MyContext);
   const [loading, setLoading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  // Reset chat state on mount so that a new conversation starts on tab switch
+  useEffect(() => {
+    setSelectedChat(null);
+    setMessages([]);
+    setChatId(null);
+    setImgSelected(false);
+  }, [setSelectedChat]);
+
+  // Update local states whenever selectedChat changes
+  useEffect(() => {
+    if (selectedChat) {
+      const filteredMessages = selectedChat.messages
+        // Filter out internal instructions
+        .filter(
+          (msg) => !msg.content.startsWith("You are a Legal AI Assistant")
+        )
+        .map((msg) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp || Date.now()),
+        }));
+      setMessages(filteredMessages);
+      setChatId(selectedChat.chatId);
+      setImgSelected(true);
+    } else {
+      setMessages([]);
+      setChatId(null);
+      setImgSelected(false);
+    }
+  }, [selectedChat]);
 
   // Check if token exists on mount
   useEffect(() => {
@@ -55,20 +86,7 @@ const ChatBoxForDocs = () => {
     }
   }, [user, router]);
 
-  // Whenever the selectedChat changes, update local states accordingly
-  useEffect(() => {
-    if (selectedChat) {
-      setMessages(selectedChat.messages);
-      setChatId(selectedChat.chatId);
-      setImgSelected(true);
-    } else {
-      setMessages([]);
-      setChatId(null);
-      setImgSelected(false);
-    }
-  }, [selectedChat]);
-
-  // Scroll to the bottom when messages update
+  // Smooth scroll to the bottom when messages update
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -79,7 +97,6 @@ const ChatBoxForDocs = () => {
     if (!input.trim()) return;
     setLoading(true);
 
-    // Use user._id (as stored by your backend) instead of user.userId
     const newMessage = {
       userId: user._id,
       question: input,
@@ -87,12 +104,13 @@ const ChatBoxForDocs = () => {
     };
 
     try {
-      // Append the user's message
+      // Append the user's message locally
       setMessages((prev) => [
         ...prev,
         { role: "user", content: input, timestamp: new Date() },
       ]);
       setInput("");
+
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/image-chat/chat",
         {
@@ -102,19 +120,39 @@ const ChatBoxForDocs = () => {
         }
       );
       const responseData = await response.json();
+      if (responseData && responseData.response) {
+        // Updated regex to remove any internal assistant instruction text
+        const aiResponse = responseData.response
+          .replace(/^You are a Legal AI Assistant.*?\n/, "")
+          .trim();
+
+        // Update the last user message to the assistant's response
+        setMessages((prev) =>
+          prev.map((msg, index) =>
+            index === prev.length - 1
+              ? {
+                  role: "assistant",
+                  content: aiResponse,
+                  timestamp: new Date(),
+                }
+              : msg
+          )
+        );
+      }
       if (responseData && responseData.chat) {
         setSelectedChat(responseData.chat);
-        // Append the assistant's response (assumed to be the last message)
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              responseData.chat.messages[responseData.chat.messages.length - 1]
-                .content,
-            timestamp: new Date(),
-          },
-        ]);
+        const lastMsg =
+          responseData.chat.messages[responseData.chat.messages.length - 1];
+        if (lastMsg) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: lastMsg.content,
+              timestamp: new Date(),
+            },
+          ]);
+        }
       }
     } catch (error) {
       console.error("Error sending message:", error);
@@ -128,7 +166,6 @@ const ChatBoxForDocs = () => {
     const formData = new FormData();
     formData.append("image", file);
     formData.append("userInput", input);
-    // Use user._id instead of user.userId
     formData.append("userId", user._id);
 
     try {
@@ -159,7 +196,6 @@ const ChatBoxForDocs = () => {
         setSelectedChat(result.chat);
         setImgSelected(true);
         setUploadedFile(file);
-        // Refresh document chats
         fetchDocChats(user);
         toast.success("File uploaded and analyzed successfully");
       }
@@ -190,16 +226,15 @@ const ChatBoxForDocs = () => {
     }
   };
 
-  const handleCopy = (content) => {
-    navigator.clipboard
-      .writeText(content)
-      .then(() => toast.success("Copied to clipboard"))
-      .catch(() => toast.error("Failed to copy"));
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGenerateResponse = async (content) => {
     toast.success("Regenerating response...");
-    // Implement your regenerate logic here
+    // Implement regenerate logic if needed
   };
 
   const handleAudioToggle = () => {
@@ -207,11 +242,10 @@ const ChatBoxForDocs = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Upload Area or Chat Area */}
+    <div className="flex flex-col h-full transition-all duration-300 ease-in-out">
       <ScrollArea className="flex-1 p-4">
         {!imgSelected ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg p-6">
+          <div className="flex flex-col items-center justify-center min-h-[200px] border-2 border-dashed border-gray-300 rounded-lg p-6">
             <input
               type="file"
               ref={fileInputRef}
@@ -233,7 +267,7 @@ const ChatBoxForDocs = () => {
             </p>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-6 transition-all duration-300 ease-in-out">
             {uploadedFile && (
               <div className="flex items-center justify-between p-3 rounded-lg mb-4">
                 <div className="flex items-center gap-2">
@@ -258,7 +292,10 @@ const ChatBoxForDocs = () => {
             )}
 
             {messages.map((msg, index) => (
-              <div key={index} className="space-y-4">
+              <div
+                key={index}
+                className="space-y-4 transition-all duration-300 ease-in-out"
+              >
                 {index === 0 && (
                   <div className="text-center text-sm text-gray-500">Today</div>
                 )}
@@ -297,22 +334,7 @@ const ChatBoxForDocs = () => {
                     </div>
                     {msg.role === "assistant" && (
                       <div className="flex justify-between items-center mt-2">
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-full w-7 h-7 p-0"
-                          >
-                            😊
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="rounded-full w-7 h-7 p-0"
-                          >
-                            ☹️
-                          </Button>
-                        </div>
+                        <div className="flex gap-2"></div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
@@ -328,7 +350,11 @@ const ChatBoxForDocs = () => {
                             className="rounded-full"
                             onClick={() => handleCopy(msg.content)}
                           >
-                            <Copy className="h-4 w-4" />
+                            {copied ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             variant="ghost"
@@ -366,9 +392,8 @@ const ChatBoxForDocs = () => {
         )}
       </ScrollArea>
 
-      {/* Input Area – Only shown after file upload */}
       {imgSelected && (
-        <div className="sticky bottom-0 p-4">
+        <div className="sticky bottom-0 p-4 transition-all duration-300 ease-in-out">
           <div className="max-w-4xl mx-auto flex gap-4">
             <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
               <Input

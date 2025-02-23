@@ -46,6 +46,7 @@ export default function ChatBox() {
   const [currentTab, setCurrentTab] = useState("chat");
   const [showFeatures, setShowFeatures] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
+  const [copied, setCopied] = useState(false);
 
   const {
     user,
@@ -178,11 +179,11 @@ export default function ChatBox() {
     }
   };
 
-  const handleCopy = (content) => {
-    navigator.clipboard
-      .writeText(content)
-      .then(() => console.log("Message copied to clipboard"))
-      .catch((error) => console.error("Failed to copy message:", error));
+  const handleCopy = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    // Reset the copied state after 2 seconds
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGenerateResponse = async (userQuery) => {
@@ -257,17 +258,17 @@ export default function ChatBox() {
   const features = [
     {
       title: "Research Assistance",
-      description: "Lorem ipsum dolor sit amet, consectetur",
+      description: "Get help in researching legal cases",
       onClick: () => setCurrentTab("chat"),
     },
     {
       title: "Case Prediction",
-      description: "Lorem ipsum dolor sit amet, consectetur",
+      description: "Use AI to predict case outcomes",
       onClick: () => setCurrentTab("analysis"),
     },
     {
       title: "Document Drafting",
-      description: "Lorem ipsum dolor sit amet, consectetur",
+      description: "Draft legal documents with AI assistance",
       onClick: () => setCurrentTab("drafting"),
     },
   ];
@@ -345,19 +346,19 @@ export default function ChatBox() {
                     value="chat"
                     className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
                   >
-                    Documentation
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="drafting"
-                    className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
-                  >
-                    Drafting
+                    Research Assistant
                   </TabsTrigger>
                   <TabsTrigger
                     value="analysis"
                     className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
                   >
                     Case Prediction
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="drafting"
+                    className="rounded-full px-4 py-1 text-xs data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white"
+                  >
+                    Drafting
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
