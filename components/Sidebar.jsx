@@ -1,16 +1,22 @@
 "use client";
+import { useState, useEffect, useContext } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import axios from "axios";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
   MessageSquarePlus,
-  MessageSquare,
+  Code,
   Settings,
   HelpCircle,
   LogOut,
-  Code,
   LayoutDashboardIcon,
   Mail,
   FileQuestion,
+  Copy,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   Dialog,
@@ -25,74 +31,92 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MyContext } from "@/context/MyContext";
-import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useContext, useState } from "react";
-import { usePathname } from "next/navigation";
-import axios from "axios";
-import Link from "next/link";
+import { MyContext } from "@/context/MyContext";
+import { useToast } from "@/hooks/use-toast"; // Adjust the import path as needed
+
+const plans = [
+  {
+    name: "Basic",
+    monthly: 0,
+    annually: 0,
+    description: "Ideal for individuals and small businesses.",
+    features: ["Basic support", "Limited access", "Essential tools"],
+  },
+  {
+    name: "Super",
+    monthly: 199,
+    annually: 199,
+    description: "Perfect for growing businesses and startups.",
+    features: ["Priority support", "Extended access", "Advanced analytics"],
+  },
+  {
+    name: "Advance",
+    monthly: 399,
+    annually: 399,
+    description: "Best for enterprises requiring robust solutions.",
+    features: ["24/7 support", "Full access", "Custom integrations"],
+  },
+];
 
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const {
-    user,
-    setSelectedChat,
-    selectedChat,
-    chats,
-    setChats,
-    setUser,
-    setMessages,
-  } = useContext(MyContext);
+  const { user, setSelectedChat, selectedChat, setUser, setMessages } =
+    useContext(MyContext);
+  const { toast } = useToast();
+
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
-
-  // State for billing type (monthly vs annually)
   const [billPlan, setBillPlan] = useState("monthly");
   const isMonthly = billPlan === "monthly";
+  const [apiKeys, setApiKeys] = useState([]);
+  // Track which keys are visible (unmasked)
+  const [visibleKeys, setVisibleKeys] = useState({});
 
-  // Pricing plans (updated pricing):
-  // Basic: Free, Super: ₹199/month, Advance: ₹399/month
-  const plans = [
-    {
-      name: "Basic",
-      monthly: 0,
-      annually: 0,
-      description: "Ideal for individuals and small businesses.",
-      features: ["Basic support", "Limited access", "Essential tools"],
-    },
-    {
-      name: "Super",
-      monthly: 199,
-      annually: 199,
-      description: "Perfect for growing businesses and startups.",
-      features: ["Priority support", "Extended access", "Advanced analytics"],
-    },
-    {
-      name: "Advance",
-      monthly: 399,
-      annually: 399,
-      description: "Best for enterprises requiring robust solutions.",
-      features: ["24/7 support", "Full access", "Custom integrations"],
-    },
-  ];
+  // Fetch API keys for the current user.
+  const fetchApiKeys = async () => {
+    console.log("Fetching API keys for user:", user?.userId || user?._id);
+    try {
+      if (!(user?.userId || user?._id)) return;
+      const id = user.userId || user._id;
+      const res = await axios.get(`/api/api-keys?userId=${id}`);
+      console.log("Fetched API keys:", res.data.apiKeys);
+      setApiKeys(res.data.apiKeys);
 
-  // Newsletter subscription handlers
+      // Reset visible states for keys
+      const visibility = {};
+      res.data.apiKeys.forEach((k) => (visibility[k.key] = false));
+      setVisibleKeys(visibility);
+    } catch (error) {
+      console.error("Failed to fetch API keys", error);
+    }
+  };
+
+  useEffect(() => {
+    if (showSettings && (user?.userId || user?._id)) {
+      fetchApiKeys();
+    }
+  }, [showSettings, user]);
+
   const handleNewsletterSubscribe = () => {
-    alert("Subscribed to newsletter!");
-    // Update user state to reflect subscription
+    toast({
+      title: "Subscribed",
+      description: "You've subscribed to the newsletter!",
+    });
     setUser({ ...user, newsletterSubscribed: true });
   };
 
   const handleNewsletterOptOut = () => {
-    alert("You've opted out of the newsletter.");
-    // Update user state to reflect opt out
+    toast({
+      title: "Opted Out",
+      description: "You've opted out of the newsletter.",
+    });
     setUser({ ...user, newsletterSubscribed: false });
   };
 
@@ -109,7 +133,7 @@ export default function Sidebar() {
 
   const handleBuyNow = async (plan) => {
     setIsProcessing(true);
-    setCouponMessage(""); // clear any previous messages
+    setCouponMessage("");
     try {
       const response = await axios.post("/api/cashfree/initiate", {
         plan,
@@ -118,17 +142,14 @@ export default function Sidebar() {
       });
       const { payment_link, message } = response.data;
       if (payment_link) {
-        // Redirect to payment if Cashfree provides a payment link.
         window.location.href = payment_link;
       } else {
-        // If no payment link but a message is returned, show it as a success message.
         setCouponMessage(
           message || "Payment processed. Your plan has been updated."
         );
       }
     } catch (error) {
       console.error("Payment initiation failed", error);
-      // Display backend error (or fallback error message)
       setCouponMessage(
         error.response?.data?.error ||
           "Payment initiation failed. Please try again."
@@ -137,18 +158,130 @@ export default function Sidebar() {
     setIsProcessing(false);
   };
 
-  // API key management functions
-  const generateApiKey = () => {
-    // Implement your API key generation logic here
-    alert("API Key generated!");
+  // API key management functions with toast notifications.
+  const generateApiKey = async () => {
+    console.log("Attempting to generate API key");
+    try {
+      const id = user?.userId || user?._id;
+      if (!id) {
+        console.error("User ID not found");
+        toast({
+          title: "Error",
+          description: "User ID not found",
+          variant: "destructive",
+        });
+        return;
+      }
+      // If on basic plan, enforce maximum of 3 active API keys.
+      if (user.plan === "basic") {
+        const activeCount = apiKeys.filter((k) => k.active).length;
+        if (activeCount >= 3) {
+          toast({
+            title: "Limit Reached",
+            description:
+              "Maximum API keys reached for basic plan. Upgrade your plan for more.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      const res = await axios.post("/api/api-keys", {
+        userId: id,
+        action: "generate",
+      });
+      if (res.data.error) {
+        toast({
+          title: "Error",
+          description: res.data.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Success", description: "API Key generated!" });
+      }
+      fetchApiKeys();
+    } catch (error) {
+      console.error("Error generating API key", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate API key",
+        variant: "destructive",
+      });
+    }
   };
 
-  const regenerateApiKey = () => {
-    // Implement your API key regeneration logic here
-    alert("API Key regenerated!");
+  const regenerateApiKey = async () => {
+    console.log("Attempting to regenerate API key");
+    try {
+      const id = user?.userId || user?._id;
+      if (!id) {
+        console.error("User ID not found");
+        toast({
+          title: "Error",
+          description: "User ID not found",
+          variant: "destructive",
+        });
+        return;
+      }
+      const res = await axios.post("/api/api-keys", {
+        userId: id,
+        action: "regenerate",
+      });
+      if (res.data.error) {
+        toast({
+          title: "Error",
+          description: res.data.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Success", description: "API Key regenerated!" });
+      }
+      fetchApiKeys();
+    } catch (error) {
+      console.error("Error regenerating API key", error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate API key",
+        variant: "destructive",
+      });
+    }
   };
 
-  // Navigation items array. Conditionally add the newsletter subscription tab
+  const deactivateApiKey = async (key) => {
+    console.log("Attempting to deactivate API key:", key);
+    try {
+      const id = user?.userId || user?._id;
+      if (!id) return;
+      const res = await axios.delete(`/api/api-keys?userId=${id}&key=${key}`);
+      if (res.data.error) {
+        toast({
+          title: "Error",
+          description: res.data.error,
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Success", description: "API Key deactivated" });
+      }
+      fetchApiKeys();
+    } catch (error) {
+      console.error("Error deactivating API key", error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate API key",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Toggle visibility (show/hide) for a given API key.
+  const toggleVisibility = (key) => {
+    setVisibleKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const copyToClipboard = (key) => {
+    navigator.clipboard.writeText(key);
+    toast({ title: "Copied", description: "API Key copied to clipboard!" });
+  };
+
   const navItems = [
     {
       icon: MessageSquarePlus,
@@ -183,7 +316,6 @@ export default function Sidebar() {
       onClick: () => router.push("/faq"),
       isActive: pathname === "/faq",
     },
-    // Only show the newsletter subscription tab if the user hasn't subscribed
     ...(!user?.newsletterSubscribed
       ? [
           {
@@ -264,11 +396,10 @@ export default function Sidebar() {
                 {user?.plan === "basic" ? "Upgrade" : "Change Plan"}
               </Button>
             </div>
-            <p></p>
           </div>
         </Card>
 
-        {/* User Profile and Logout */}
+        {/* User Profile & Logout */}
         <div className="mt-4 flex items-center justify-between border-t pt-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -304,73 +435,175 @@ export default function Sidebar() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        <DialogContent>
+        {/* Only one vertical scrollbar for the entire dialog */}
+        <DialogContent className="p-6 max-h-[80vh] overflow-y-auto space-y-6">
           <DialogHeader>
-            <DialogTitle>Settings</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
-            {/* Conditionally render API key management if the user's plan is "super" or "premium" */}
-            {(user?.plan === "super" || user?.plan === "premium") && (
-              <div className="grid gap-2">
-                <h3 className="font-medium">API Key Management</h3>
-                <div className="flex gap-2">
-                  <Button variant="outline" onClick={generateApiKey}>
-                    Generate API Key
-                  </Button>
-                  <Button variant="outline" onClick={regenerateApiKey}>
-                    Regenerate API Key
-                  </Button>
-                </div>
-              </div>
-            )}
-            <div className="grid gap-2">
-              <h3 className="font-medium">Notifications</h3>
-              <Button variant="outline">Manage Notifications</Button>
-            </div>
-            <div className="grid gap-2">
-              <h3 className="font-medium">Other Settings</h3>
-              <p className="text-sm text-muted-foreground">
-                Additional settings can be added here.
-              </p>
-            </div>
-            {/* If user is subscribed to the newsletter, show option to opt out */}
-            {user?.newsletterSubscribed && (
-              <div className="grid gap-2">
-                <h3 className="font-medium">Newsletter Subscription</h3>
-                <Button variant="outline" onClick={handleNewsletterOptOut}>
-                  Opt Out
+
+          <div className="space-y-6">
+            {/* API Key Management Card */}
+            <Card className="p-4 shadow-sm">
+              <h3 className="text-xl font-semibold mb-4">API Key Management</h3>
+              <div className="flex gap-4 mb-4">
+                <Button variant="outline" onClick={generateApiKey}>
+                  Generate API Key
+                </Button>
+                <Button variant="outline" onClick={regenerateApiKey}>
+                  Regenerate API Key
                 </Button>
               </div>
-            )}
+
+              {/* API Keys Table (no overflow-x-auto, so only one scrollbar overall) */}
+              <table className="w-full table-auto divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      API Key
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created At
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Expires
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {apiKeys && apiKeys.length > 0 ? (
+                    apiKeys.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono">
+                              {visibleKeys[item.key]
+                                ? item.key
+                                : "••••••••••••••••••••"}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => toggleVisibility(item.key)}
+                              title={visibleKeys[item.key] ? "Hide" : "Show"}
+                            >
+                              {visibleKeys[item.key] ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                            {visibleKeys[item.key] && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => copyToClipboard(item.key)}
+                                title="Copy"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                          {item.expires
+                            ? new Date(item.expires).toLocaleString()
+                            : "Never"}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">
+                          {item.active ? (
+                            <span className="text-green-600">Active</span>
+                          ) : (
+                            <span className="text-red-600">Inactive</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-sm">
+                          {item.active && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deactivateApiKey(item.key)}
+                            >
+                              Deactivate
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        className="px-4 py-2 whitespace-nowrap text-sm text-gray-500 text-center"
+                      >
+                        No API Keys generated.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </Card>
+
+            {/* Other Settings */}
+            <div className="space-y-4">
+              <Card className="p-4 shadow-sm">
+                <h3 className="text-xl font-semibold mb-2">Notifications</h3>
+                <Button variant="outline">Manage Notifications</Button>
+              </Card>
+
+              <Card className="p-4 shadow-sm">
+                <h3 className="text-xl font-semibold mb-2">Other Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  Additional settings can be added here.
+                </p>
+              </Card>
+
+              {user?.newsletterSubscribed && (
+                <Card className="p-4 shadow-sm">
+                  <h3 className="text-xl font-semibold mb-2">
+                    Newsletter Subscription
+                  </h3>
+                  <Button variant="outline" onClick={handleNewsletterOptOut}>
+                    Opt Out
+                  </Button>
+                </Card>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Help Dialog */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
-        <DialogContent>
+        <DialogContent className="p-6">
           <DialogHeader>
-            <DialogTitle>Updates</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">Updates</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4">
-            <div className="rounded-lg border p-4">
-              <h3 className="font-medium">Latest Updates</h3>
-              <p className="text-sm text-muted-foreground">
-                Version 2.0 is now available with improved AI capabilities
-              </p>
-            </div>
+          <div className="rounded-lg border p-4">
+            <h3 className="font-medium">Latest Updates</h3>
+            <p className="text-sm text-muted-foreground">
+              Version 2.0 is now available with improved AI capabilities.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Premium Plans Modal */}
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        <DialogContent className="max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh]">
+        <DialogContent className="max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh] p-6">
           <DialogHeader>
-            <DialogTitle>Select a Premium Plan</DialogTitle>
+            <DialogTitle className="text-2xl font-bold">
+              Select a Premium Plan
+            </DialogTitle>
           </DialogHeader>
-
-          {/* Coupon Input Field with Message */}
           <div className="mb-4 px-4">
             <label
               htmlFor="coupon"
@@ -399,8 +632,6 @@ export default function Sidebar() {
               </p>
             )}
           </div>
-
-          {/* Pricing Cards Container */}
           <div className="grid grid-cols-1 gap-8 mt-8 md:grid-cols-3">
             {plans.map((plan) => {
               const price = isMonthly ? plan.monthly : plan.annually;
@@ -411,23 +642,18 @@ export default function Sidebar() {
                   key={plan.name}
                   className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm"
                 >
-                  {/* Price */}
                   <div className="text-4xl font-semibold text-indigo-600">
                     {price === 0 ? "Free" : `₹${price}`}
                     <span className="ml-1 text-lg font-normal text-gray-500">
                       {price === 0 ? "" : `/${isMonthly ? "month" : "year"}`}
                     </span>
                   </div>
-
-                  {/* Plan Name & Description */}
                   <div className="mt-2 border-b pb-4">
                     <h3 className="text-2xl font-semibold">{plan.name}</h3>
                     <p className="mt-1 text-sm text-gray-500">
                       {plan.description}
                     </p>
                   </div>
-
-                  {/* Features */}
                   <ul className="mt-4 space-y-2 flex-1">
                     {plan.features.map((feature, idx) => (
                       <li key={idx} className="flex items-center text-sm">
@@ -446,8 +672,6 @@ export default function Sidebar() {
                       </li>
                     ))}
                   </ul>
-
-                  {/* Buy Now / Current Button */}
                   <div className="pt-4">
                     {isActive ? (
                       <Button className="w-full" disabled>

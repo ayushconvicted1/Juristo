@@ -66,7 +66,7 @@ const FAQPage = () => {
                 <AccordionTrigger className="text-lg font-medium transition-colors hover:text-blue-600">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="pl-4 text-sm text-gray-200">
+                <AccordionContent className="pl-4 text-sm ">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
