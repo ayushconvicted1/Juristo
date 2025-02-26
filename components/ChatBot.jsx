@@ -186,9 +186,19 @@ export default function ChatBox() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleGenerateResponse = async (userQuery) => {
+  // UPDATED: Update the existing assistant message (by its index) with the new response.
+  const handleGenerateResponse = async (userQuery, assistantMessageIndex) => {
     if (!user) return;
     setLoading(true);
+
+    // Set loading state on the existing assistant message.
+    setMessages((prev) =>
+      prev.map((msg, index) =>
+        index === assistantMessageIndex
+          ? { ...msg, content: "", loading: true, timestamp: new Date() }
+          : msg
+      )
+    );
 
     const newMessage = {
       userId: user._id,
@@ -203,16 +213,6 @@ export default function ChatBox() {
     };
 
     try {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "",
-          timestamp: new Date(),
-          loading: true,
-        },
-      ]);
-
       const response = await fetch(
         "https://juristo-backend-azure.vercel.app/api/chat",
         {
@@ -231,11 +231,12 @@ export default function ChatBox() {
 
         setMessages((prev) =>
           prev.map((msg, index) =>
-            index === prev.length - 1
+            index === assistantMessageIndex
               ? {
                   role: "assistant",
                   content: aiResponse,
                   timestamp: new Date(),
+                  loading: false,
                 }
               : msg
           )
@@ -247,7 +248,11 @@ export default function ChatBox() {
     } catch (error) {
       console.error("Error generating response:", error);
       setLoading(false);
-      setMessages((prev) => prev.slice(0, -1));
+      setMessages((prev) =>
+        prev.map((msg, index) =>
+          index === assistantMessageIndex ? { ...msg, loading: false } : msg
+        )
+      );
     }
   };
 
@@ -462,7 +467,8 @@ export default function ChatBox() {
                               onCopy={() => handleCopy(msg.content)}
                               onGenerateResponse={() =>
                                 handleGenerateResponse(
-                                  messages[index - 1].content
+                                  messages[index - 1].content,
+                                  index
                                 )
                               }
                               onToggleAudio={handleToggleAudio}

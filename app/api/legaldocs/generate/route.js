@@ -56,7 +56,9 @@ export async function POST(req) {
     User Input: ${userInput}
     Answers: ${JSON.stringify(answers)}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-pro-exp-02-05",
+    });
     const result = await model.generateContent({
       contents: [
         {

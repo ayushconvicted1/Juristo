@@ -455,22 +455,6 @@ const ChatBot = () => {
                   </div>
                   {msg.role === "assistant" && (
                     <div className="flex justify-between items-center mt-2">
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
-                        >
-                          😊
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="hover:bg-gray-100 rounded-full w-7 h-7 p-0"
-                        >
-                          ☹️
-                        </Button>
-                      </div>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
