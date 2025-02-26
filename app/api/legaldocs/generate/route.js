@@ -2,14 +2,21 @@ import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import mongoose from "mongoose";
 import { Legaldocs } from "@/lib/db/models/Legaldocs";
-import dotenv from "dotenv";
 import axios from "axios";
 import FormData from "form-data";
 import { jsPDF } from "jspdf";
 import { JSDOM } from "jsdom";
 import { marked } from "marked";
 
-dotenv.config();
+// Ensure that this API route uses the Node.js runtime rather than the Edge runtime.
+export const config = {
+  runtime: "nodejs",
+};
+
+// Use dotenv only in non-production environments.
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 // Database connection function
 async function connectToDatabase() {
@@ -53,8 +60,8 @@ export async function POST(req) {
     const systemMessage = `You are a professional legal assistant... tailored for ${country}. Please provide your response in properly formatted Markdown, ensuring correct indentation and structure for a professional PDF document.`;
     const userMessage = `Based on the following user input and answers, generate a legal document in Markdown format:
     
-    User Input: ${userInput}
-    Answers: ${JSON.stringify(answers)}`;
+User Input: ${userInput}
+Answers: ${JSON.stringify(answers)}`;
 
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-pro-exp-02-05",
@@ -62,7 +69,7 @@ export async function POST(req) {
     const result = await model.generateContent({
       contents: [
         {
-          role: "user", // Gemini does not support "system"; use "user"
+          role: "user", // Gemini does not support "system"; using "user"
           parts: [{ text: systemMessage }],
         },
         {
@@ -115,9 +122,9 @@ export async function POST(req) {
 const generatePDF = async (markdownText) => {
   const html = marked(markdownText);
   const dom = new JSDOM(html);
-  const document = dom.window.document;
+  const doc = dom.window.document;
   const pdf = new jsPDF();
-  const elements = document.body.children;
+  const elements = doc.body.children;
   let yOffset = 10;
 
   for (let i = 0; i < elements.length; i++) {
