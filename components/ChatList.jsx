@@ -205,7 +205,7 @@ const ChatList = ({ currentTab }) => {
 
   return (
     <>
-      <div className="flex h-full flex-col bg-background border-l">
+      <div className="flex pt-[10%] lg:pt-[0] h-full flex-col bg-background border-l">
         <div className="border-b p-4">
           <h2 className="mb-4 font-bold">My Chats</h2>
           <div className="relative">

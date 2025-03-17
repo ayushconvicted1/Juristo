@@ -2,7 +2,15 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Mic, Moon, Sun, ChevronDown } from "lucide-react";
+import {
+  ArrowUpRight,
+  Mic,
+  Moon,
+  Sun,
+  ChevronDown,
+  Menu,
+  MessageCircle,
+} from "lucide-react";
 import { format } from "date-fns";
 import { MyContext } from "@/context/MyContext";
 import { Button } from "@/components/ui/button";
@@ -18,6 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import ChatList from "./ChatList";
+import Sidebar from "@/components/Sidebar"; // Import the Sidebar component
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +56,8 @@ export default function ChatBox() {
   const [showFeatures, setShowFeatures] = useState(true);
   const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
   const [copied, setCopied] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // For ChatList
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // For Sidebar
 
   const {
     user,
@@ -186,7 +197,6 @@ export default function ChatBox() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // UPDATED: Update the existing assistant message (by its index) with the new response.
   const handleGenerateResponse = async (userQuery, assistantMessageIndex) => {
     if (!user) return;
     setLoading(true);
@@ -279,10 +289,42 @@ export default function ChatBox() {
   ];
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col lg:flex-row h-screen">
+      {/* Mobile Menu Button for Sidebar */}
+      <div
+        className={`fixed lg:relative inset-y-0 left-0 bg-black z-50 border-r transform transition-transform duration-300 pt-[5%] lg:pt-[0] ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </div>
+
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="h-8 w-8"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Chat Icon for Mobile Menu (ChatList) */}
+      <div className="lg:hidden fixed top-4 right-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="h-8 w-8"
+        >
+          <MessageCircle className="h-5 w-5" />
+        </Button>
+      </div>
+
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="sticky top-0 border-b p-4">
+        <div className="sticky top-0 border-b p-4 bg-background z-10">
           <div className="max-w-4xl mx-auto flex items-center justify-between">
             <div /> {/* Spacer */}
             <div className="flex items-center gap-4">
@@ -493,7 +535,7 @@ export default function ChatBox() {
 
         {currentTab === "chat" && (
           <div className="p-4 border-t">
-            <div className="max-w-4xl mx-auto flex gap-4">
+            <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4">
               <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
                 <Input
                   type="text"
@@ -519,9 +561,20 @@ export default function ChatBox() {
         )}
       </div>
 
+      {/* Sidebar */}
+
       {/* Right Sidebar – Chat List */}
-      <div className="w-80 border-l">
-        <ChatList currentTab={currentTab} />
+      <div
+        className={`fixed lg:relative inset-y-0 right-0 w-80 bg-background  transform transition-transform duration-300 ${
+          isMobileMenuOpen
+            ? "translate-x-0"
+            : "translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <ChatList
+          currentTab={currentTab}
+          onClose={() => setIsMobileMenuOpen(false)}
+        />
       </div>
     </div>
   );

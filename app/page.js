@@ -18,9 +18,9 @@ export default function Home() {
   return (
     <div className="flex gap-4 justify-center items-start h-screen">
       {/* Sidebar */}
-      <div className="flex-none w-1/5 h-full overflow-y-auto">
+      {/* <div className="flex-none lg:w-1/5 h-full overflow-y-auto">
         <Sidebar />
-      </div>
+      </div> */}
 
       {/* Main ChatBot Section */}
       <div className="flex-1 h-full relative overflow-hidden">

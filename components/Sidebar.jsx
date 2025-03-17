@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { MyContext } from "@/context/MyContext";
 import { useToast } from "@/hooks/use-toast"; // Adjust the import path as needed
+import { FiX } from "react-icons/fi";
 
 const plans = [
   {
@@ -60,7 +61,7 @@ const plans = [
   },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, setSelectedChat, selectedChat, setUser, setMessages } =
@@ -331,6 +332,17 @@ export default function Sidebar() {
   return (
     <div className="flex h-full w-[280px] flex-col border-r py-4">
       {/* Header */}
+      <div className="flex justify-end items-center mb-4">
+        {/* <h2 className="font-bold">Sidebar</h2> */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="lg:hidden"
+        >
+          <FiX className="h-5 w-5" />
+        </Button>
+      </div>
       <div className="flex items-center gap-2 px-4 pb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg font-bold">
           <img

@@ -41,6 +41,8 @@ const MyProvider = ({ children }) => {
                 throw new Error("Invalid or expired token");
               }
               const decoded = await response.json();
+              console.log(decoded);
+
               const email = decoded.email;
               if (email) {
                 await fetchUserData(email);
