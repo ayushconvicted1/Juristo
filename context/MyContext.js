@@ -31,7 +31,7 @@ const MyProvider = ({ children }) => {
             try {
               // Validate the token with the backend
               const response = await fetch(
-                "https://juristo-backend-azure.vercel.app/api/auth/validate",
+                "juristo-backend-phi.vercel.app/api/auth/validate",
                 {
                   method: "GET",
                   headers: { Authorization: `Bearer ${token}` },
@@ -68,7 +68,7 @@ const MyProvider = ({ children }) => {
   const fetchUserData = async (email) => {
     try {
       const response = await fetch(
-        `https://juristo-backend-azure.vercel.app/api/users/get/${email}`
+        `juristo-backend-phi.vercel.app/api/users/get/${email}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch user data");
@@ -87,7 +87,7 @@ const MyProvider = ({ children }) => {
   const fetchChats = async (userData) => {
     try {
       const response = await fetch(
-        `https://juristo-backend-azure.vercel.app/api/chat/${userData._id}`
+        `juristo-backend-phi.vercel.app/api/chat/${userData._id}`
       );
       const data = await response.json();
       setChats(data.reverse());

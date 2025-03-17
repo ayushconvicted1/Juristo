@@ -50,7 +50,7 @@ const Signup = () => {
 
     try {
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/auth/signup",
+        "juristo-backend-phi.vercel.app/api/auth/signup",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

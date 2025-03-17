@@ -127,7 +127,7 @@ const ChatBot = () => {
   const updateDraftCountAndNotify = async () => {
     try {
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/users/updated",
+        "juristo-backend-phi.vercel.app/api/users/updated",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -192,7 +192,7 @@ const ChatBot = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/legaldocs/questions",
+        "juristo-backend-phi.vercel.app/api/legaldocs/questions",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

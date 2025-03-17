@@ -112,7 +112,7 @@ export async function POST(req) {
 
     // Place return_url inside order_meta
     const return_url =
-      process.env.RETURN_URL || "https://juristo-prod.vercel.app/dashboard";
+      process.env.RETURN_URL || "https://juristo-nine.vercel.app/dashboard";
     console.log(
       "Initiate Payment: Sending request to Cashfree with return_url:",
       return_url

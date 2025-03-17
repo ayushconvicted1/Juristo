@@ -145,14 +145,11 @@ export default function ChatBox() {
         },
       ]);
 
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMessage),
-        }
-      );
+      const response = await fetch("juristo-backend-phi.vercel.app/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
 
       const responseData = await response.json();
 
@@ -223,14 +220,11 @@ export default function ChatBox() {
     };
 
     try {
-      const response = await fetch(
-        "https://juristo-backend-azure.vercel.app/api/chat",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newMessage),
-        }
-      );
+      const response = await fetch("juristo-backend-phi.vercel.app/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMessage),
+      });
 
       const responseData = await response.json();
 
