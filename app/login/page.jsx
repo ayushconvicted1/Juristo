@@ -64,7 +64,7 @@ export default function Login() {
 
     try {
       const response = await fetch(
-        "juristo-backend-phi.vercel.app/api/auth/login",
+        "https://juristo-backend-phi.vercel.app/api/auth/login",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

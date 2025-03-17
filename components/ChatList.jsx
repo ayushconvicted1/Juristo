@@ -40,11 +40,11 @@ const ChatList = ({ currentTab }) => {
       console.log("Fetching draft chats from local API:", url);
       return url;
     } else if (currentTab === "analysis") {
-      const url = `juristo-backend-phi.vercel.app/api/image-chat/${user._id}`;
+      const url = `https://juristo-backend-phi.vercel.app/api/image-chat/${user._id}`;
       console.log("Fetching analysis chats from external API:", url);
       return url;
     } else {
-      const url = `juristo-backend-phi.vercel.app/api/chat/${user._id}`;
+      const url = `https://juristo-backend-phi.vercel.app/api/chat/${user._id}`;
       console.log("Fetching chats from external API:", url);
       return url;
     }
@@ -57,11 +57,11 @@ const ChatList = ({ currentTab }) => {
       console.log("Deleting draft chat from local API:", url);
       return url;
     } else if (currentTab === "analysis") {
-      const url = `juristo-backend-phi.vercel.app/api/image-chat/${chatId}`;
+      const url = `https://juristo-backend-phi.vercel.app/api/image-chat/${chatId}`;
       console.log("Deleting analysis chat from external API:", url);
       return url;
     } else {
-      const url = `juristo-backend-phi.vercel.app/api/chat/${chatId}`;
+      const url = `https://juristo-backend-phi.vercel.app/api/chat/${chatId}`;
       console.log("Deleting chat from external API:", url);
       return url;
     }

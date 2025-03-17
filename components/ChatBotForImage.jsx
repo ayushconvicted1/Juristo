@@ -112,7 +112,7 @@ const ChatBoxForDocs = () => {
       setInput("");
 
       const response = await fetch(
-        "juristo-backend-phi.vercel.app/api/image-chat/chat",
+        "https://juristo-backend-phi.vercel.app/api/image-chat/chat",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -171,7 +171,7 @@ const ChatBoxForDocs = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "juristo-backend-phi.vercel.app/api/image-chat/process-file",
+        "https://juristo-backend-phi.vercel.app/api/image-chat/process-file",
         {
           method: "POST",
           body: formData,

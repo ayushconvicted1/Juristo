@@ -10,7 +10,7 @@ const DocsChatList = () => {
   useEffect(() => {
     const fetchChats = async () => {
       const data = await fetch(
-        `juristo-backend-phi.vercel.app/api/image-chat/${user.userId}`
+        `https://juristo-backend-phi.vercel.app/api/image-chat/${user.userId}`
         // `http://localhost:5000/api/image-chat/${user.userId}`
       ).then((res) => res.json());
       setChats(data.reverse());
@@ -26,7 +26,7 @@ const DocsChatList = () => {
 
     try {
       const response = await fetch(
-        `juristo-backend-phi.vercel.app/api/image-chat/${chatId}`,
+        `https://juristo-backend-phi.vercel.app/api/image-chat/${chatId}`,
         {
           // const response = await fetch(`http://localhost:5000/api/image-chat/${chatId}`, {
           method: "DELETE",
