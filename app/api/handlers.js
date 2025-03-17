@@ -7,7 +7,7 @@ import { Legaldocs } from "../models/Legaldocs.js";
 export const handler = async (req, res) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
-    "https://juristo-sigma.vercel.app"
+    "https://juristo-nine.vercel.app"
   );
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -95,11 +95,9 @@ const createDocument = async (req, res) => {
     const { userId, answers, userInput, country } = req.body;
 
     if (!userId || !answers || !userInput || !country) {
-      return res
-        .status(400)
-        .json({
-          error: "User ID, answers, user input, and country are required.",
-        });
+      return res.status(400).json({
+        error: "User ID, answers, user input, and country are required.",
+      });
     }
 
     const aiResponse = await openai.chat.completions.create({
