@@ -175,6 +175,7 @@ const ChatBoxForDocs = () => {
         {
           method: "POST",
           body: formData,
+          headers: { "Content-Type": "multipart/form-data" },
         }
       );
 
@@ -192,6 +193,8 @@ const ChatBoxForDocs = () => {
             timestamp: new Date(),
           },
         ]);
+        console.log(result?.message);
+
         setChatId(result.chatId);
         setSelectedChat(result.chat);
         setImgSelected(true);

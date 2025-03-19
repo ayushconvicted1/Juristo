@@ -380,12 +380,12 @@ export default function ChatBox() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 scroll-area">
+        <ScrollArea className="flex-1 justify-center scroll-area">
           <div className="p-4">
-            <div className="p-4 flex justify-center">
+            <div className=" flex justify-center">
               <Tabs
                 value={currentTab}
-                className="w-full max-w-2xl justify-center items-center flex"
+                className="w-full max-w-[100vw] justify-center items-center flex"
                 onValueChange={(value) => setCurrentTab(value)}
               >
                 <TabsList className="bg-gray-100 p-1 rounded-full mx-auto">
@@ -426,7 +426,7 @@ export default function ChatBox() {
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+                  <div className="hidden lg:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
                     {features.map((feature) => (
                       <Card
                         key={feature.title}
@@ -447,88 +447,91 @@ export default function ChatBox() {
                   </div>
                 </>
               )}
-
-              {currentTab === "analysis" && <ChatBoxForDocs />}
-              {currentTab === "drafting" && <ChatBot />}
-              {currentTab === "chat" && (
-                <div className="space-y-6">
-                  {messages.map((msg, index) => (
-                    <div key={index} className="space-y-4">
-                      {index === 0 && (
-                        <div className="text-center text-sm text-gray-500">
-                          Today
-                        </div>
-                      )}
-                      <div
-                        className={`flex ${
-                          msg.role === "user" ? "justify-end" : "justify-start"
-                        } gap-3`}
-                      >
-                        {msg.role === "assistant" && (
-                          <Avatar className="w-7 h-7">
-                            <AvatarFallback>J</AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div className="flex flex-col gap-2 max-w-[80%]">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold">
-                              {msg.role === "user" ? "You" : "Response"}
-                            </span>
-                            <span className="text-[10px] text-gray-500">
-                              {format(msg.timestamp, "dd MMM • h:mm a")}
-                            </span>
+              <div className="flex-1">
+                {currentTab === "analysis" && <ChatBoxForDocs />}
+                {currentTab === "drafting" && <ChatBot />}
+                {currentTab === "chat" && (
+                  <div className="space-y-6">
+                    {messages.map((msg, index) => (
+                      <div key={index} className="space-y-4">
+                        {index === 0 && (
+                          <div className="text-center text-sm text-gray-500">
+                            Today
                           </div>
-                          {msg.loading ? (
-                            <div className="px-3 py-1.5 rounded-lg text-xs">
-                              <Skeleton className="w-[200px] h-[12px]" />
-                              <Skeleton className="w-[150px] h-[12px] mt-1" />
-                              <Skeleton className="w-[100px] h-[12px] mt-1" />
-                            </div>
-                          ) : (
-                            <div
-                              className={`px-3 py-1.5 rounded-lg text-xs ${
-                                msg.role === "user"
-                                  ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4"
-                                  : "bg-gray-100 p-4"
-                              }`}
-                            >
-                              {msg.role === "user" ? (
-                                msg.content
-                              ) : (
-                                <ReactMarkdown
-                                  className="formatted-content prose prose-sm max-w-none text-black"
-                                  remarkPlugins={[remarkGfm]}
-                                >
-                                  {msg.content}
-                                </ReactMarkdown>
-                              )}
-                            </div>
+                        )}
+                        <div
+                          className={`flex ${
+                            msg.role === "user"
+                              ? "justify-end"
+                              : "justify-start"
+                          } gap-3`}
+                        >
+                          {msg.role === "assistant" && (
+                            <Avatar className="w-7 h-7">
+                              <AvatarFallback>J</AvatarFallback>
+                            </Avatar>
                           )}
-                          {msg.role === "assistant" && !msg.loading && (
-                            <MessageActions
-                              onCopy={() => handleCopy(msg.content)}
-                              onGenerateResponse={() =>
-                                handleGenerateResponse(
-                                  messages[index - 1].content,
-                                  index
-                                )
-                              }
-                              onToggleAudio={handleToggleAudio}
-                              content={msg.content}
-                            />
+                          <div className="flex flex-col gap-2 max-w-[80%]">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold">
+                                {msg.role === "user" ? "You" : "Response"}
+                              </span>
+                              <span className="text-[10px] text-gray-500">
+                                {format(msg.timestamp, "dd MMM • h:mm a")}
+                              </span>
+                            </div>
+                            {msg.loading ? (
+                              <div className="px-3 py-1.5 rounded-lg text-xs">
+                                <Skeleton className="w-[200px] h-[12px]" />
+                                <Skeleton className="w-[150px] h-[12px] mt-1" />
+                                <Skeleton className="w-[100px] h-[12px] mt-1" />
+                              </div>
+                            ) : (
+                              <div
+                                className={`px-3 py-1.5 rounded-lg text-xs ${
+                                  msg.role === "user"
+                                    ? "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4"
+                                    : "bg-gray-100 p-4"
+                                }`}
+                              >
+                                {msg.role === "user" ? (
+                                  msg.content
+                                ) : (
+                                  <ReactMarkdown
+                                    className="formatted-content prose prose-sm max-w-none text-black"
+                                    remarkPlugins={[remarkGfm]}
+                                  >
+                                    {msg.content}
+                                  </ReactMarkdown>
+                                )}
+                              </div>
+                            )}
+                            {msg.role === "assistant" && !msg.loading && (
+                              <MessageActions
+                                onCopy={() => handleCopy(msg.content)}
+                                onGenerateResponse={() =>
+                                  handleGenerateResponse(
+                                    messages[index - 1].content,
+                                    index
+                                  )
+                                }
+                                onToggleAudio={handleToggleAudio}
+                                content={msg.content}
+                              />
+                            )}
+                          </div>
+                          {msg.role === "user" && (
+                            <Avatar className="w-7 h-7">
+                              <AvatarImage src="/placeholder.svg" />
+                              <AvatarFallback>U</AvatarFallback>
+                            </Avatar>
                           )}
                         </div>
-                        {msg.role === "user" && (
-                          <Avatar className="w-7 h-7">
-                            <AvatarImage src="/placeholder.svg" />
-                            <AvatarFallback>U</AvatarFallback>
-                          </Avatar>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </ScrollArea>

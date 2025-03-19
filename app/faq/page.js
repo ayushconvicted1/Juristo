@@ -1,6 +1,6 @@
 "use client";
 import Sidebar from "@/components/Sidebar";
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import {
   Accordion,
@@ -8,6 +8,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 
 const faqData = [
   {
@@ -49,15 +51,32 @@ const faqData = [
 ];
 
 const FAQPage = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   return (
     <div className="flex h-screen transition-all duration-300 ease-in-out">
       {/* Sidebar */}
-      <div className="w-1/5 h-full shadow-lg">
-        <Sidebar />
+      <div
+        className={`fixed lg:relative inset-y-0 left-0 bg-background z-50 border-r transform transition-transform duration-300 pt-[5%] lg:pt-[0] ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </div>
+
+      {/* Mobile Sidebar Toggle Button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="h-8 w-8"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-auto ">
+      <div className="flex-1 p-6 overflow-auto pt-[15%] lg:pt-[5%] ">
         <h1 className="text-3xl font-bold mb-6">Frequently Asked Questions</h1>
         <div className="space-y-4">
           <Accordion type="single" collapsible className="w-full">

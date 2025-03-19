@@ -34,8 +34,8 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { MyContext } from "@/context/MyContext";
-import { useToast } from "@/hooks/use-toast"; // Adjust the import path as needed
-import { FiX } from "react-icons/fi";
+import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "next-themes"; // Import useTheme hook
 
 const plans = [
   {
@@ -67,6 +67,7 @@ export default function Sidebar({ onClose }) {
   const { user, setSelectedChat, selectedChat, setUser, setMessages } =
     useContext(MyContext);
   const { toast } = useToast();
+  const { theme } = useTheme(); // Get the current theme
 
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
@@ -77,7 +78,6 @@ export default function Sidebar({ onClose }) {
   const [billPlan, setBillPlan] = useState("monthly");
   const isMonthly = billPlan === "monthly";
   const [apiKeys, setApiKeys] = useState([]);
-  // Track which keys are visible (unmasked)
   const [visibleKeys, setVisibleKeys] = useState({});
 
   // Fetch API keys for the current user.
@@ -159,7 +159,6 @@ export default function Sidebar({ onClose }) {
     setIsProcessing(false);
   };
 
-  // API key management functions with toast notifications.
   const generateApiKey = async () => {
     console.log("Attempting to generate API key");
     try {
@@ -173,7 +172,6 @@ export default function Sidebar({ onClose }) {
         });
         return;
       }
-      // If on basic plan, enforce maximum of 3 active API keys.
       if (user.plan === "basic") {
         const activeCount = apiKeys.filter((k) => k.active).length;
         if (activeCount >= 3) {
@@ -273,7 +271,6 @@ export default function Sidebar({ onClose }) {
     }
   };
 
-  // Toggle visibility (show/hide) for a given API key.
   const toggleVisibility = (key) => {
     setVisibleKeys((prev) => ({ ...prev, [key]: !prev[key] }));
   };
@@ -330,19 +327,13 @@ export default function Sidebar({ onClose }) {
   ];
 
   return (
-    <div className="flex h-full w-[280px] flex-col border-r py-4">
+    <div
+      className={cn(
+        "flex h-full w-[280px] pt-[20%] lg:pt-[5%] flex-col border-r py-4",
+        theme === "dark" ? "bg-black-900 text-white" : "bg-white text-gray-900" // Apply theme-specific styles
+      )}
+    >
       {/* Header */}
-      <div className="flex justify-end items-center mb-4">
-        {/* <h2 className="font-bold">Sidebar</h2> */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="lg:hidden"
-        >
-          <FiX className="h-5 w-5" />
-        </Button>
-      </div>
       <div className="flex items-center gap-2 px-4 pb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg font-bold">
           <img
@@ -367,7 +358,8 @@ export default function Sidebar({ onClose }) {
             onClick={item.onClick}
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-accent",
-              item.isActive && "bg-accent text-blue-600"
+              item.isActive && "bg-accent text-blue-600",
+              theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-100" // Theme-specific hover
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -376,7 +368,10 @@ export default function Sidebar({ onClose }) {
         ))}
         <Link
           href="/dashboard"
-          className="flex w-full items-center gap-2 rounded-lg px-0 py-2 text-[15px] font-medium transition-colors hover:bg-accent m-3"
+          className={cn(
+            "flex w-full items-center gap-2 rounded-lg px-0 py-2 text-[15px] font-medium transition-colors hover:bg-accent m-3",
+            theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-100" // Theme-specific hover
+          )}
         >
           <LayoutDashboardIcon className="h-4 w-4" />
           <span>Dashboard</span>
@@ -385,8 +380,18 @@ export default function Sidebar({ onClose }) {
 
       {/* Premium Section */}
       <div className="px-4 mt-auto">
-        <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white">
+        <Card
+          className={cn(
+            "overflow-hidden",
+            theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+          )}
+        >
+          <div
+            className={cn(
+              "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white",
+              theme === "dark" ? "border-gray-700" : "border-gray-200" // Theme-specific border
+            )}
+          >
             <h3 className="font-semibold">
               {user?.plan
                 ? "Your Current Plan: " +
@@ -426,13 +431,6 @@ export default function Sidebar({ onClose }) {
                 </span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-[200px]">
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
           </DropdownMenu>
           <Button
             variant="ghost"
@@ -447,15 +445,26 @@ export default function Sidebar({ onClose }) {
 
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
-        {/* Only one vertical scrollbar for the entire dialog */}
-        <DialogContent className="p-6 max-h-[80vh] overflow-y-auto space-y-6">
+        <DialogContent
+          className={cn(
+            "p-6 space-y-6 flex flex-col overflow-y-auto",
+            theme === "dark"
+              ? "bg-gray-900 text-white"
+              : "bg-white text-gray-900" // Theme-specific styles
+          )}
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
             {/* API Key Management Card */}
-            <Card className="p-4 shadow-sm">
+            <Card
+              className={cn(
+                "p-4 shadow-sm",
+                theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+              )}
+            >
               <h3 className="text-xl font-semibold mb-4">API Key Management</h3>
               <div className="flex gap-4 mb-4">
                 <Button variant="outline" onClick={generateApiKey}>
@@ -466,7 +475,7 @@ export default function Sidebar({ onClose }) {
                 </Button>
               </div>
 
-              {/* API Keys Table (no overflow-x-auto, so only one scrollbar overall) */}
+              {/* API Keys Table */}
               <table className="w-full table-auto divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -566,12 +575,22 @@ export default function Sidebar({ onClose }) {
 
             {/* Other Settings */}
             <div className="space-y-4">
-              <Card className="p-4 shadow-sm">
+              <Card
+                className={cn(
+                  "p-4 shadow-sm",
+                  theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                )}
+              >
                 <h3 className="text-xl font-semibold mb-2">Notifications</h3>
                 <Button variant="outline">Manage Notifications</Button>
               </Card>
 
-              <Card className="p-4 shadow-sm">
+              <Card
+                className={cn(
+                  "p-4 shadow-sm",
+                  theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                )}
+              >
                 <h3 className="text-xl font-semibold mb-2">Other Settings</h3>
                 <p className="text-sm text-muted-foreground">
                   Additional settings can be added here.
@@ -579,7 +598,12 @@ export default function Sidebar({ onClose }) {
               </Card>
 
               {user?.newsletterSubscribed && (
-                <Card className="p-4 shadow-sm">
+                <Card
+                  className={cn(
+                    "p-4 shadow-sm",
+                    theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                  )}
+                >
                   <h3 className="text-xl font-semibold mb-2">
                     Newsletter Subscription
                   </h3>
@@ -595,7 +619,14 @@ export default function Sidebar({ onClose }) {
 
       {/* Help Dialog */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
-        <DialogContent className="p-6">
+        <DialogContent
+          className={cn(
+            "p-6",
+            theme === "dark"
+              ? "bg-gray-900 text-white"
+              : "bg-white text-gray-900" // Theme-specific styles
+          )}
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">Updates</DialogTitle>
           </DialogHeader>
@@ -610,7 +641,14 @@ export default function Sidebar({ onClose }) {
 
       {/* Premium Plans Modal */}
       <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
-        <DialogContent className="max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh] p-6">
+        <DialogContent
+          className={cn(
+            "max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh] p-6",
+            theme === "dark"
+              ? "bg-gray-900 text-white"
+              : "bg-white text-gray-900" // Theme-specific styles
+          )}
+        >
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold">
               Select a Premium Plan
@@ -652,7 +690,10 @@ export default function Sidebar({ onClose }) {
               return (
                 <div
                   key={plan.name}
-                  className="flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm"
+                  className={cn(
+                    "flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm",
+                    theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                  )}
                 >
                   <div className="text-4xl font-semibold text-indigo-600">
                     {price === 0 ? "Free" : `₹${price}`}

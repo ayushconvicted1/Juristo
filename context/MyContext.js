@@ -96,6 +96,21 @@ const MyProvider = ({ children }) => {
     }
   };
 
+  const fetchDocChats = async (user) => {
+    try {
+      const response = await fetch(
+        `https://juristo-backend-phi.vercel.app/api/image-chat/${user.userId}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch doc chats");
+      }
+      const data = await response.json();
+      setChats(data.reverse());
+    } catch (error) {
+      console.error("Error fetching doc chats:", error);
+    }
+  };
+
   return (
     <MyContext.Provider
       value={{
@@ -112,6 +127,7 @@ const MyProvider = ({ children }) => {
         selectedLanguage,
         setSelectedLanguage,
         loading,
+        fetchDocChats,
       }}
     >
       {children}

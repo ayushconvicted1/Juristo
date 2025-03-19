@@ -17,12 +17,14 @@ import {
   Upload,
   Search,
   Pencil,
+  Menu,
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
-import { useContext } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("connection");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const getMethodColor = (method) => {
     switch (method) {
@@ -203,10 +205,28 @@ export default function Home() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <div className="w-[280px] flex-shrink-0">
-        <Sidebar />
+      {/* Sidebar */}
+      <div
+        className={`fixed lg:relative inset-y-0 left-0 bg-background z-50 border-r transform transition-transform duration-300 pt-[5%] lg:pt-[0] ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
       </div>
 
+      {/* Mobile Sidebar Toggle Button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="h-8 w-8"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="container py-8 px-4">
           <div className="max-w-5xl mx-auto">
@@ -227,12 +247,13 @@ export default function Home() {
               className="w-full"
               onValueChange={setActiveTab}
             >
-              <TabsList className="grid grid-cols-5 lg:grid-cols-6 w-full mb-8">
+              {/* Tabs List */}
+              <TabsList className="flex overflow-x-auto lg:grid lg:grid-cols-6 w-full mb-8">
                 {endpoints.map((endpoint) => (
                   <TabsTrigger
                     key={endpoint.id}
                     value={endpoint.id}
-                    className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
+                    className="flex items-center gap-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 whitespace-nowrap"
                   >
                     {endpoint.icon}
                     <span className="hidden sm:inline">{endpoint.name}</span>
@@ -240,6 +261,7 @@ export default function Home() {
                 ))}
               </TabsList>
 
+              {/* Tabs Content */}
               {endpoints.map((endpoint) => (
                 <TabsContent key={endpoint.id} value={endpoint.id}>
                   <Card>
@@ -263,12 +285,13 @@ export default function Home() {
                     </CardHeader>
                     <CardContent className="pt-6">
                       <div className="grid gap-6">
+                        {/* Request Section */}
                         <div>
                           <h3 className="text-lg font-semibold mb-2">
                             Request
                           </h3>
                           <Card className="border-blue-50">
-                            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                            <ScrollArea className="h-auto max-h-[200px] w-full rounded-md border p-4">
                               <pre className="text-sm">
                                 {JSON.stringify(endpoint.request, null, 2)}
                               </pre>
@@ -276,12 +299,13 @@ export default function Home() {
                           </Card>
                         </div>
 
+                        {/* Response Section */}
                         <div>
                           <h3 className="text-lg font-semibold mb-2">
                             Response
                           </h3>
                           <Card className="border-blue-50">
-                            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                            <ScrollArea className="h-auto max-h-[200px] w-full rounded-md border p-4">
                               <pre className="text-sm">
                                 {JSON.stringify(endpoint.response, null, 2)}
                               </pre>
@@ -289,12 +313,13 @@ export default function Home() {
                           </Card>
                         </div>
 
+                        {/* Example Request Section */}
                         <div>
                           <h3 className="text-lg font-semibold mb-2">
                             Example Request
                           </h3>
                           <Card className="border-blue-50">
-                            <ScrollArea className="h-[200px] w-full rounded-md border p-4">
+                            <ScrollArea className="h-auto max-h-[200px] w-full rounded-md border p-4">
                               <pre className="text-sm whitespace-pre-wrap">
                                 {endpoint.curl}
                               </pre>
