@@ -26,7 +26,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import ChatList from "./ChatList";
-import Sidebar from "@/components/Sidebar"; // Import the Sidebar component
+import Sidebar from "@/components/Sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -537,7 +537,7 @@ export default function ChatBox() {
         </ScrollArea>
 
         {currentTab === "chat" && (
-          <div className="p-4 border-t">
+          <div className="sticky bottom-0 bg-background border-t p-4 z-20">
             <div className="max-w-4xl mx-auto flex flex-col sm:flex-row gap-4">
               <div className="flex-1 flex items-center gap-2 rounded-lg border p-2">
                 <Input
@@ -563,8 +563,6 @@ export default function ChatBox() {
           </div>
         )}
       </div>
-
-      {/* Sidebar */}
 
       {/* Right Sidebar – Chat List */}
       <div

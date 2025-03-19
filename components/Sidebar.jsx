@@ -79,6 +79,9 @@ export default function Sidebar({ onClose }) {
   const isMonthly = billPlan === "monthly";
   const [apiKeys, setApiKeys] = useState([]);
   const [visibleKeys, setVisibleKeys] = useState({});
+  const currentPlan = user?.plan ? plans[user.plan.toLowerCase()] : plans[0];
+
+  console.log("Currentplan" + currentPlan);
 
   // Fetch API keys for the current user.
   const fetchApiKeys = async () => {
@@ -667,7 +670,7 @@ export default function Sidebar({ onClose }) {
               value={coupon}
               onChange={(e) => setCoupon(e.target.value)}
               placeholder="Enter coupon code"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 h-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
             {couponMessage && (
               <p
@@ -734,9 +737,13 @@ export default function Sidebar({ onClose }) {
                       <Button
                         className="w-full"
                         onClick={() => handleBuyNow(plan.name.toLowerCase())}
-                        disabled={isProcessing}
+                        disabled={isProcessing || currentPlan === plan}
                       >
-                        {isProcessing ? "Processing..." : `Get ${plan.name}`}
+                        {isProcessing
+                          ? "Processing..."
+                          : currentPlan === plan
+                          ? "Activated"
+                          : `Get ${plan.name}`}
                       </Button>
                     )}
                   </div>
