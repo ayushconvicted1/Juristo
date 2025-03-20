@@ -69,6 +69,8 @@ export default function Sidebar({ onClose }) {
   const { toast } = useToast();
   const { theme } = useTheme(); // Get the current theme
 
+  console.log(theme);
+
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [showPlanDialog, setShowPlanDialog] = useState(false);
@@ -333,7 +335,7 @@ export default function Sidebar({ onClose }) {
     <div
       className={cn(
         "flex h-full w-[280px] pt-[20%] lg:pt-[5%] flex-col border-r py-4",
-        theme === "dark" ? "bg-black-900 text-white" : "bg-white text-gray-900" // Apply theme-specific styles
+        theme === "light" ? "bg-white text-gray-900" : "bg-black-900 text-white" // Apply theme-specific styles
       )}
     >
       {/* Header */}
@@ -362,7 +364,7 @@ export default function Sidebar({ onClose }) {
             className={cn(
               "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors hover:bg-accent",
               item.isActive && "bg-accent text-blue-600",
-              theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-100" // Theme-specific hover
+              theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-800" // Theme-specific hover
             )}
           >
             <item.icon className="h-4 w-4" />
@@ -373,7 +375,7 @@ export default function Sidebar({ onClose }) {
           href="/dashboard"
           className={cn(
             "flex w-full items-center gap-2 rounded-lg px-0 py-2 text-[15px] font-medium transition-colors hover:bg-accent m-3",
-            theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-100" // Theme-specific hover
+            theme === "light" ? "hover:bg-gray-100" : "hover:bg-gray-800" // Theme-specific hover
           )}
         >
           <LayoutDashboardIcon className="h-4 w-4" />
@@ -386,13 +388,13 @@ export default function Sidebar({ onClose }) {
         <Card
           className={cn(
             "overflow-hidden",
-            theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+            theme === "light" ? "bg-white" : "bg-gray-800" // Theme-specific background
           )}
         >
           <div
             className={cn(
               "bg-gradient-to-br from-[#0A2540] to-[#144676] p-4 text-white",
-              theme === "dark" ? "border-gray-700" : "border-gray-200" // Theme-specific border
+              theme === "light" ? "border-gray-200" : "border-gray-700" // Theme-specific border
             )}
           >
             <h3 className="font-semibold">
@@ -451,9 +453,10 @@ export default function Sidebar({ onClose }) {
         <DialogContent
           className={cn(
             "p-6 space-y-6 flex flex-col overflow-y-auto",
-            theme === "dark"
-              ? "bg-gray-900 text-white"
-              : "bg-white text-gray-900" // Theme-specific styles
+            theme === "light"
+              ? "bg-white text-gray-900"
+              : "bg-gray-900 text-white"
+            // Theme-specific styles
           )}
         >
           <DialogHeader>
@@ -465,7 +468,7 @@ export default function Sidebar({ onClose }) {
             <Card
               className={cn(
                 "p-4 shadow-sm",
-                theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                theme === "light" ? "bg-white" : "bg-gray-800" // Theme-specific background
               )}
             >
               <h3 className="text-xl font-semibold mb-4">API Key Management</h3>
@@ -578,7 +581,7 @@ export default function Sidebar({ onClose }) {
 
             {/* Other Settings */}
             <div className="space-y-4">
-              <Card
+              {/* <Card
                 className={cn(
                   "p-4 shadow-sm",
                   theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
@@ -586,12 +589,12 @@ export default function Sidebar({ onClose }) {
               >
                 <h3 className="text-xl font-semibold mb-2">Notifications</h3>
                 <Button variant="outline">Manage Notifications</Button>
-              </Card>
+              </Card> */}
 
               <Card
                 className={cn(
                   "p-4 shadow-sm",
-                  theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                  theme === "light" ? "bg-white" : "bg-gray-800" // Theme-specific background
                 )}
               >
                 <h3 className="text-xl font-semibold mb-2">Other Settings</h3>
@@ -604,7 +607,7 @@ export default function Sidebar({ onClose }) {
                 <Card
                   className={cn(
                     "p-4 shadow-sm",
-                    theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                    theme === "dark" ? "bg-white" : "bg-gray-800" // Theme-specific background
                   )}
                 >
                   <h3 className="text-xl font-semibold mb-2">
@@ -625,9 +628,9 @@ export default function Sidebar({ onClose }) {
         <DialogContent
           className={cn(
             "p-6",
-            theme === "dark"
-              ? "bg-gray-900 text-white"
-              : "bg-white text-gray-900" // Theme-specific styles
+            theme === "light"
+              ? "bg-white text-gray-900"
+              : "bg-gray-900 text-white" // Theme-specific styles
           )}
         >
           <DialogHeader>
@@ -647,9 +650,10 @@ export default function Sidebar({ onClose }) {
         <DialogContent
           className={cn(
             "max-w-4xl w-full mx-auto overflow-y-auto max-h-[90vh] p-6",
-            theme === "dark"
-              ? "bg-gray-900 text-white"
-              : "bg-white text-gray-900" // Theme-specific styles
+            theme === "light"
+              ? "bg-white text-gray-900"
+              : "bg-gray-900 text-white"
+            // Theme-specific styles
           )}
         >
           <DialogHeader>
@@ -695,7 +699,7 @@ export default function Sidebar({ onClose }) {
                   key={plan.name}
                   className={cn(
                     "flex flex-col p-6 border border-gray-200 rounded-lg shadow-sm",
-                    theme === "dark" ? "bg-gray-800" : "bg-white" // Theme-specific background
+                    theme === "light" ? "bg-white" : "bg-gray-800" // Theme-specific background
                   )}
                 >
                   <div className="text-4xl font-semibold text-indigo-600">

@@ -207,19 +207,26 @@ const ChatBot = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      setQuestions(data.questions || []);
+      setQuestions(data.questions.slice(1) || []);
+
+      // Add only the assistant's initial message
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "I've analyzed your request. Please answer the following questions to help me generate the appropriate legal document.",
+          timestamp: new Date(),
+        },
+      ]);
+
+      // Add the first question
       if (data.questions && data.questions.length > 0) {
         setMessages((prev) => [
           ...prev,
           {
             role: "assistant",
-            content:
-              "I've analyzed your request. Please answer the following questions to help me generate the appropriate legal document.",
-            timestamp: new Date(),
-          },
-          {
-            role: "assistant",
-            content: data.questions[0],
+            content: data.questions[1],
             timestamp: new Date(),
           },
         ]);
@@ -235,6 +242,8 @@ const ChatBot = () => {
       setLoading(false);
     }
   };
+
+  console.log(questions);
 
   // Submit an answer for the current question
   const handleAnswerSubmit = async () => {
@@ -269,7 +278,7 @@ const ChatBot = () => {
         ...prev,
         {
           role: "assistant",
-          content: questions[currentQuestionIndex + 1],
+          content: questions[currentQuestionIndex + 1], // Add the next question
           timestamp: new Date(),
         },
       ]);

@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
       <body>
         <MyProvider>
           {/* <Navbar/> */}
-          <ThemeProvider attribute="class">
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Toaster />
             {children}
           </ThemeProvider>

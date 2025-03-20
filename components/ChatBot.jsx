@@ -45,6 +45,27 @@ const defaultCountry =
   countryOptions.find((country) => country.name === "India") ||
   countryOptions[0];
 
+const languages = [];
+
+countries.forEach((country) => {
+  if (country.languages) {
+    Object.entries(country.languages).forEach(([code, name]) => {
+      if (!languages.find((lang) => lang.value === code.toUpperCase())) {
+        languages.push({
+          label: name,
+          value: code.toUpperCase(), // ISO Language Code
+          flag: `https://flagcdn.com/w40/${country.cca2.toLowerCase()}.png`, // Approximate Flag
+        });
+      }
+    });
+  }
+});
+
+// Sort by `value` (Language Code)
+languages.sort((a, b) => a.value.localeCompare(b.value));
+
+console.log(languages);
+
 export default function ChatBox() {
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -66,6 +87,7 @@ export default function ChatBox() {
     selectedLanguage,
     fetchChats,
     setSelectedChat,
+    setSelectedLanguage,
   } = useContext(MyContext);
 
   useEffect(() => {
@@ -375,6 +397,41 @@ export default function ChatBox() {
                   <Sun className="h-5 w-5" />
                 )}
               </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 border rounded-md shadow-sm">
+                    <Image
+                      src={selectedLanguage.flag}
+                      alt={`${selectedLanguage.label} flag`}
+                      width={20}
+                      height={15}
+                      className="rounded-sm"
+                    />
+                    <span className="text-sm font-medium">
+                      {selectedLanguage.label}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-64 max-h-60 overflow-y-auto border rounded-md shadow-lg">
+                  {languages.map((language) => (
+                    <DropdownMenuItem
+                      key={language.value}
+                      onSelect={() => setSelectedLanguage(language)}
+                      className="flex items-center gap-2 px-4 py-2 cursor-pointer"
+                    >
+                      <Image
+                        src={language.flag}
+                        alt={`${language.label} flag`}
+                        width={20}
+                        height={15}
+                        className="rounded-sm"
+                      />
+                      <span>{language.label}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div /> {/* Spacer */}
           </div>

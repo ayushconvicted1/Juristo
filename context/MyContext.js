@@ -14,6 +14,7 @@ const MyProvider = ({ children }) => {
   const [selectedLanguage, setSelectedLanguage] = useState({
     value: "EN",
     label: "English",
+    flag: "https://flagcdn.com/w40/us.png",
   });
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true); // true until auth is verified
