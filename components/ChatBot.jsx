@@ -438,7 +438,7 @@ export default function ChatBox() {
         </div>
 
         <ScrollArea className="flex-1 justify-center scroll-area">
-          <div className="p-4">
+          <div className="pt-4">
             <div className=" flex justify-center">
               <Tabs
                 value={currentTab}
