@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
 
     try {
       const response = await fetch(
-        `https://juristo-backend-phi.vercel.app/api/auth/resetPassword/${token}`,
+        `http://localhost:5000/api/auth/resetPassword/${token}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },

@@ -31,7 +31,7 @@ export default function ForgotPassword() {
 
     try {
       const response = await fetch(
-        "https://juristo-backend-phi.vercel.app/api/auth/forgotPassword",
+        "http://localhost:5000/api/auth/forgotPassword",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

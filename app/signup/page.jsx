@@ -49,14 +49,11 @@ const Signup = () => {
     const fcmToken = "dummy_fcm_token_for_testing_signup";
 
     try {
-      const response = await fetch(
-        "https://juristo-backend-phi.vercel.app/api/auth/signup",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...formData, fcmToken }),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, fcmToken }),
+      });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || "Signup failed");

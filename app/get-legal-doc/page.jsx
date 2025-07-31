@@ -126,14 +126,11 @@ const ChatBot = () => {
    */
   const updateDraftCountAndNotify = async () => {
     try {
-      const response = await fetch(
-        "https://juristo-backend-phi.vercel.app/api/users/updated",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user._id }),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/users/updated", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user._id }),
+      });
       if (!response.ok) {
         throw new Error("Failed to update draft count");
       }
@@ -192,7 +189,7 @@ const ChatBot = () => {
     try {
       setLoading(true);
       const response = await fetch(
-        "https://juristo-backend-phi.vercel.app/api/legaldocs/questions",
+        "http://localhost:5000/api/legaldocs/questions",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

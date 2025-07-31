@@ -152,7 +152,7 @@ const Navbar = () => {
 
     try {
       const response = await fetch(
-        `https://juristo-backend-phi.vercel.app/api/users/update/${user.userId}`,
+        `http://localhost:5000/api/users/update/${user.userId}`,
         {
           // const response = await fetch(`http://localhost:5000/api/users/update/${user.userId}`, {
           method: "PUT",
@@ -180,7 +180,7 @@ const Navbar = () => {
 
     try {
       const response = await fetch(
-        `https://juristo-backend-phi.vercel.app/api/users/update/${user.userId}`,
+        `http://localhost:5000/api/users/update/${user.userId}`,
         // const response = await fetch(`http://localhost:5000/api/users/update/${user.userId}`,
         {
           method: "PUT",
